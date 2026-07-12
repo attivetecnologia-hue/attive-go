@@ -1,0 +1,1643 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Attive GO</title>
+<style>
+:root{
+  --bg:#0B0D12; --surface:#12151C; --surface-2:#171B24; --border:rgba(255,255,255,.08);
+  --text:#EDEFF3; --text-muted:#9AA1AE; --text-dim:#6B7280;
+  --accent:#3B6FF0; --accent-dim:rgba(59,111,240,.15);
+  --ok:#22C55E; --alert:#EF4444; --warn:#F59E0B;
+  --ov-04:rgba(255,255,255,.04); --ov-08:rgba(255,255,255,.08); --ov-1:rgba(255,255,255,.1);
+  --mono:'SFMono-Regular',Menlo,Consolas,monospace;
+  --spring:cubic-bezier(.34,1.56,.64,1);
+}
+*{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+body{margin:0; background:var(--bg); color:var(--text); font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif; -webkit-font-smoothing:antialiased;}
+button, input, select, textarea{font-family:inherit; font-size:15px;}
+input, select, textarea{
+  width:100%; background:var(--surface-2); border:1px solid var(--border); color:var(--text);
+  padding:12px 14px; border-radius:12px; outline:none; transition:border-color .2s;
+}
+input:focus, select:focus, textarea:focus{border-color:var(--accent);}
+label{display:block; font-size:12px; font-weight:600; color:var(--text-muted); margin-bottom:6px; text-transform:uppercase; letter-spacing:.02em;}
+.field{margin-bottom:14px;}
+button{cursor:pointer; border:none; border-radius:12px; font-weight:700;}
+.btn-primary{background:var(--accent); color:#fff; padding:14px; width:100%; font-size:15px;}
+.btn-primary:active{transform:scale(.98);}
+.btn-secondary{background:var(--ov-08); color:var(--text); border:1px solid var(--border); padding:12px; width:100%;}
+.btn-danger{background:rgba(239,68,68,.12); color:var(--alert); border:1px solid rgba(239,68,68,.3); padding:10px 14px;}
+.btn-sm{padding:8px 14px; font-size:13px; width:auto;}
+.hidden{display:none !important;}
+
+/* ---------- Login ---------- */
+#tela-login{
+  min-height:100vh; display:flex; align-items:center; justify-content:center; padding:24px;
+}
+.login-card{width:100%; max-width:380px;}
+.login-logo{text-align:center; margin-bottom:32px;}
+.login-logo .dot{width:14px; height:14px; border-radius:50%; background:var(--accent); display:inline-block; margin-bottom:14px; box-shadow:0 0 24px var(--accent);}
+.login-logo h1{font-size:22px; font-weight:800; margin:0 0 4px;}
+.login-logo p{color:var(--text-dim); font-size:13px; margin:0;}
+#login-erro{
+  background:rgba(239,68,68,.1); border:1px solid rgba(239,68,68,.3); color:#FCA5A5;
+  padding:12px 14px; border-radius:12px; font-size:13px; margin-bottom:16px; display:none;
+}
+
+/* ---------- App shell ---------- */
+#app-shell{display:none; min-height:100vh; flex-direction:column;}
+.topbar{
+  position:sticky; top:0; z-index:20; background:rgba(11,13,18,.85); backdrop-filter:blur(16px);
+  border-bottom:1px solid var(--border); padding:14px 18px; display:flex; align-items:center; justify-content:space-between;
+}
+.topbar-title{font-weight:800; font-size:15px;}
+.topbar-sub{font-size:11px; color:var(--text-dim); font-family:var(--mono);}
+.topbar-user{display:flex; align-items:center; gap:10px;}
+.avatar{width:32px; height:32px; border-radius:50%; background:var(--accent-dim); color:var(--accent); display:flex; align-items:center; justify-content:center; font-weight:800; font-size:13px;}
+.icon-btn{width:36px; height:36px; border-radius:10px; background:var(--ov-04); color:var(--text-muted); display:flex; align-items:center; justify-content:center;}
+.icon-btn svg{width:17px; height:17px;}
+
+.main{flex:1; padding:18px; max-width:900px; width:100%; margin:0 auto;}
+.section-title{font-size:12px; font-weight:700; color:var(--text-dim); text-transform:uppercase; letter-spacing:.04em; margin:20px 0 10px;}
+.section-title:first-child{margin-top:0;}
+
+.card{background:var(--surface); border:1px solid var(--border); border-radius:16px; padding:16px; margin-bottom:12px;}
+.card-row{display:flex; align-items:center; justify-content:space-between; gap:12px; cursor:pointer;}
+.card-title{font-weight:700; font-size:15px; margin-bottom:3px;}
+.card-sub{font-size:12px; color:var(--text-muted);}
+.chip{display:inline-flex; align-items:center; gap:6px; padding:5px 11px; border-radius:20px; font-size:11px; font-weight:700; white-space:nowrap;}
+.chip .led{width:6px; height:6px; border-radius:50%;}
+.chip.pendente{background:rgba(245,158,11,.12); color:var(--warn);}
+.chip.pendente .led{background:var(--warn);}
+.chip.concluido{background:rgba(34,197,94,.12); color:var(--ok);}
+.chip.concluido .led{background:var(--ok);}
+.chip.aguardando_peca{background:rgba(239,68,68,.12); color:var(--alert);}
+.chip.aguardando_peca .led{background:var(--alert);}
+
+.empty{text-align:center; padding:40px 20px; color:var(--text-dim);}
+.empty svg{width:40px; height:40px; margin-bottom:10px; opacity:.5;}
+.empty p{font-size:13px; margin:0;}
+
+.fab{
+  position:fixed; bottom:24px; right:24px; width:56px; height:56px; border-radius:50%;
+  background:var(--accent); color:#fff; display:flex; align-items:center; justify-content:center;
+  box-shadow:0 10px 24px rgba(59,111,240,.4); z-index:30;
+}
+.fab svg{width:24px; height:24px;}
+
+.bottom-nav{
+  position:sticky; bottom:0; z-index:20; background:rgba(11,13,18,.9); backdrop-filter:blur(16px);
+  border-top:1px solid var(--border); display:flex; padding:8px 6px calc(8px + env(safe-area-inset-bottom));
+}
+.nav-item{flex:1; display:flex; flex-direction:column; align-items:center; gap:3px; padding:6px; color:var(--text-dim); background:none;}
+.nav-item svg{width:20px; height:20px;}
+.nav-item span{font-size:10px; font-weight:700;}
+.nav-item.active{color:var(--accent);}
+
+/* ---------- Modal ---------- */
+.modal-overlay{
+  display:none; position:fixed; inset:0; background:rgba(0,0,0,.6); z-index:100;
+  align-items:flex-end; justify-content:center; backdrop-filter:blur(4px);
+}
+.modal-overlay.active{display:flex;}
+.modal{
+  background:var(--surface); width:100%; max-width:480px; max-height:88vh; overflow-y:auto;
+  border-radius:22px 22px 0 0; padding:22px; animation:slideUp .3s var(--spring);
+}
+@media (min-width:640px){
+  .modal-overlay{align-items:center;}
+  .modal{border-radius:22px; max-height:80vh;}
+}
+@keyframes slideUp{from{transform:translateY(40px); opacity:0;} to{transform:translateY(0); opacity:1;}}
+.modal-header{display:flex; align-items:center; justify-content:space-between; margin-bottom:18px;}
+.modal-header h2{font-size:17px; margin:0;}
+.modal-close{width:32px; height:32px; border-radius:10px; background:var(--ov-04); color:var(--text-muted); font-size:18px;}
+
+.row-2{display:grid; grid-template-columns:1fr 1fr; gap:10px;}
+.chips-wrap{display:flex; flex-wrap:wrap; gap:8px; margin-bottom:14px;}
+.chip-toggle{
+  padding:8px 14px; border-radius:20px; background:var(--ov-04); border:1px solid var(--border); color:var(--text-muted); font-size:13px; font-weight:600;
+}
+.chip-toggle.selected{background:var(--accent-dim); border-color:var(--accent); color:var(--accent);}
+
+.toast{
+  position:fixed; bottom:24px; left:50%; transform:translateX(-50%) translateY(120px); background:var(--surface-2);
+  border:1px solid var(--ov-1); color:var(--text); padding:12px 20px; border-radius:16px; font-size:13px; font-weight:600;
+  z-index:200; transition:transform .4s var(--spring); box-shadow:0 12px 30px rgba(0,0,0,.4);
+}
+.toast.show{transform:translateX(-50%) translateY(0);}
+
+.loading-spinner{
+  display:inline-block; width:18px; height:18px; border:2px solid rgba(255,255,255,.3); border-top-color:#fff;
+  border-radius:50%; animation:spin .7s linear infinite;
+}
+@keyframes spin{to{transform:rotate(360deg);}}
+
+#tela-carregando{min-height:100vh; display:flex; align-items:center; justify-content:center; flex-direction:column; gap:14px;}
+#erro-global-banner{
+  display:none; position:fixed; top:0; left:0; right:0; z-index:9999; background:var(--alert); color:#fff;
+  font-size:12px; font-weight:700; padding:10px 16px; text-align:center; cursor:pointer;
+}
+
+/* ---------- Painel (dashboard) ---------- */
+.stat-grid{display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:8px;}
+.stat-card{background:var(--surface); border:1px solid var(--border); border-radius:16px; padding:14px;}
+.stat-label{font-size:11px; color:var(--text-dim); text-transform:uppercase; letter-spacing:.03em; margin-bottom:6px; font-weight:700;}
+.stat-value{font-size:22px; font-weight:800; font-family:var(--mono);}
+.stat-value.accent{color:var(--accent);}
+.stat-value.alert{color:var(--alert);}
+
+.rosca-flex{display:flex; align-items:center; justify-content:center; gap:24px; flex-wrap:wrap;}
+.rosca-legenda{flex:1; min-width:170px; max-width:280px; display:flex; flex-direction:column; gap:10px;}
+.rosca-legenda-item{display:flex; align-items:center; gap:9px;}
+@media (max-width:520px){
+  .rosca-flex{flex-direction:column; text-align:center;}
+  .rosca-legenda{width:100%; max-width:280px; margin:0 auto;}
+  .rosca-legenda-item{flex-direction:column; align-items:center; gap:4px;}
+}
+
+.cal-header{display:flex; align-items:center; justify-content:space-between; margin-bottom:12px; gap:8px;}
+.cal-title{font-family:var(--mono); font-weight:700; font-size:13px; text-transform:capitalize;}
+.cal-nav{display:flex; align-items:center; gap:6px;}
+.cal-nav-btn, .cal-today-btn{
+  border:1px solid var(--border); background:var(--ov-04); color:var(--text); border-radius:10px; height:30px;
+}
+.cal-nav-btn{width:30px; display:flex; align-items:center; justify-content:center;}
+.cal-nav-btn svg{width:14px; height:14px;}
+.cal-today-btn{padding:0 12px; font-size:11px; font-weight:700; font-family:var(--mono); color:var(--text-muted); text-transform:uppercase;}
+.cal-grid{display:grid; grid-template-columns:repeat(7,1fr); gap:4px;}
+.cal-dow{text-align:center; font-family:var(--mono); font-size:9px; font-weight:700; color:var(--text-dim); text-transform:uppercase; padding-bottom:5px;}
+.cal-day{
+  position:relative; aspect-ratio:1/1; border-radius:10px; border:1px solid transparent; background:var(--ov-04);
+  display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px;
+}
+.cal-day.out{opacity:.25;}
+.cal-day.today{border-color:var(--accent); background:var(--accent-dim);}
+.cal-day-num{font-size:11px; font-weight:700; font-family:var(--mono);}
+.cal-day.today .cal-day-num{color:var(--accent);}
+.cal-day-dots{display:flex; gap:2px;}
+.cal-dot{width:5px; height:5px; border-radius:50%; flex-shrink:0;}
+.cal-dot.ring{background:none; border:1.3px solid; box-sizing:border-box;}
+.cal-legenda{display:flex; flex-wrap:wrap; gap:10px; margin-top:14px; padding-top:12px; border-top:1px solid var(--border);}
+.cal-legenda-item{display:flex; align-items:center; gap:6px; font-size:10px; color:var(--text-muted); font-family:var(--mono);}
+.cal-legenda-item .cal-dot{width:7px; height:7px;}
+.cal-evento-row{display:flex; align-items:center; gap:10px; padding:10px 12px; border-radius:12px; background:var(--ov-04); margin-bottom:6px;}
+.cal-evento-row .cal-dot{width:8px; height:8px; flex-shrink:0;}
+
+.ponto-botoes{display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:10px;}
+.btn-ponto{display:flex; align-items:center; justify-content:center; gap:8px; padding:12px; border-radius:12px; font-weight:700; font-size:13px; border:1px solid;}
+.btn-ponto svg{width:16px; height:16px; flex-shrink:0;}
+.btn-ponto.chegada{background:rgba(34,197,94,.12); color:var(--ok); border-color:rgba(34,197,94,.3);}
+.btn-ponto.saida{background:rgba(239,68,68,.12); color:var(--alert); border-color:rgba(239,68,68,.3);}
+.btn-ponto:active{transform:scale(.97);}
+.btn-ponto:disabled{opacity:.3; filter:grayscale(.4); cursor:not-allowed;}
+.btn-ponto:disabled:active{transform:none;}
+.ponto-lista{display:flex; flex-direction:column; gap:6px; margin-top:6px;}
+.ponto-item{display:flex; align-items:center; gap:8px; padding:9px 12px; background:var(--surface-2); border-radius:10px; font-size:12px;}
+.ponto-item .ponto-led{width:7px; height:7px; border-radius:50%; flex-shrink:0;}
+.ponto-item.chegada .ponto-led{background:var(--ok);}
+.ponto-item.saida .ponto-led{background:var(--alert);}
+.ponto-item .ponto-label{font-weight:700; width:56px; flex-shrink:0;}
+.ponto-item .ponto-tecnico{flex:1; color:var(--text-muted); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+.ponto-item .ponto-hora{font-family:var(--mono); color:var(--text-dim); flex-shrink:0;}
+
+.notif-badge{position:absolute; top:-3px; right:-3px; min-width:16px; height:16px; padding:0 4px; border-radius:8px; background:var(--alert); color:#fff; font-size:9px; font-weight:800; display:flex; align-items:center; justify-content:center; font-family:var(--mono); border:2px solid var(--bg);}
+.notif-card{padding:12px 14px; margin-bottom:8px;}
+
+.fotos-grid{display:grid; grid-template-columns:repeat(4,1fr); gap:8px;}
+.foto-thumb{position:relative; aspect-ratio:1/1; border-radius:10px; overflow:hidden; background:var(--surface-2);}
+.foto-thumb img{width:100%; height:100%; object-fit:cover; cursor:pointer;}
+.foto-thumb button{
+  position:absolute; top:3px; right:3px; width:20px; height:20px; border-radius:50%; background:rgba(0,0,0,.6); color:#fff;
+  font-size:11px; line-height:1; border:none; display:flex; align-items:center; justify-content:center;
+}
+</style>
+</head>
+<body>
+
+<div id="erro-global-banner" onclick="this.style.display='none'"></div>
+
+<!-- TELA DE CARREGAMENTO INICIAL -->
+<div id="tela-carregando">
+  <div class="loading-spinner" style="border-color:rgba(59,111,240,.25); border-top-color:var(--accent); width:28px; height:28px;"></div>
+  <div style="color:var(--text-dim); font-size:13px;">Carregando...</div>
+</div>
+
+<!-- TELA DE LOGIN -->
+<div id="tela-login" class="hidden">
+  <div class="login-card">
+    <div class="login-logo">
+      <div class="dot"></div>
+      <h1>Attive GO</h1>
+      <p>Sistema de atendimentos técnicos</p>
+    </div>
+    <div id="login-erro"></div>
+    <form id="form-login">
+      <div class="field">
+        <label>E-mail</label>
+        <input type="email" id="login-email" required placeholder="seu@email.com" autocomplete="username">
+      </div>
+      <div class="field">
+        <label>Senha</label>
+        <input type="password" id="login-senha" required placeholder="••••••••" autocomplete="current-password">
+      </div>
+      <button type="submit" class="btn-primary" id="btn-login">Entrar</button>
+    </form>
+  </div>
+</div>
+
+<!-- APP PRINCIPAL -->
+<div id="app-shell">
+  <div class="topbar">
+    <div>
+      <div class="topbar-title" id="topbar-title">Attive GO</div>
+      <div class="topbar-sub" id="topbar-sub"></div>
+    </div>
+    <div class="topbar-user">
+      <div class="avatar" id="avatar-usuario">?</div>
+      <button class="icon-btn hidden" id="btn-notificacoes-topbar" onclick="abrirModalNotificacoes()" data-tooltip="Notificações" style="position:relative;">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8a6 6 0 00-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/></svg>
+        <span class="notif-badge hidden" id="notif-badge-count">0</span>
+      </button>
+      <button class="icon-btn hidden" id="btn-backup-topbar" onclick="abrirModalBackup()" data-tooltip="Backup">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 3l4 4-4 4M21 7H9M7 21l-4-4 4-4M3 17h12"/></svg>
+      </button>
+      <button class="icon-btn" onclick="fazerLogout()" data-tooltip="Sair">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9"/></svg>
+      </button>
+    </div>
+  </div>
+
+  <div class="main" id="main-content"></div>
+
+  <div class="bottom-nav" id="bottom-nav"></div>
+</div>
+
+<!-- MODAL: DETALHE DE ATENDIMENTO (visão técnico) -->
+<div class="modal-overlay" id="modal-atendimento-tecnico">
+  <div class="modal">
+    <div class="modal-header"><h2>Atendimento</h2><button class="modal-close" onclick="fecharModais()">×</button></div>
+    <div id="detalhe-atendimento-conteudo"></div>
+  </div>
+</div>
+
+<!-- MODAL: CLIENTE (admin) -->
+<div class="modal-overlay" id="modal-cliente">
+  <div class="modal">
+    <div class="modal-header"><h2 id="modal-cliente-titulo">Cliente</h2><button class="modal-close" onclick="fecharModais()">×</button></div>
+    <form id="form-cliente">
+      <input type="hidden" id="cliente-id">
+      <div class="field"><label>Nome / Razão social</label><input id="cliente-nome" required></div>
+      <div class="row-2">
+        <div class="field"><label>Contato</label><input id="cliente-contato"></div>
+        <div class="field"><label>Telefone</label><input id="cliente-telefone"></div>
+      </div>
+      <div class="field"><label>Endereço</label><input id="cliente-endereco"></div>
+      <div class="row-2">
+        <div class="field"><label>Valor do contrato (R$/mês)</label><input type="number" min="0" step="0.01" id="cliente-valor-contrato"></div>
+        <div class="field"><label>Dia fixo da preventiva</label><input type="number" min="1" max="31" id="cliente-dia-preventiva"></div>
+      </div>
+      <div class="field"><label>Periodicidade da preventiva (dias, opcional)</label><input type="number" min="0" id="cliente-periodicidade"></div>
+      <div class="field">
+        <label>Status</label>
+        <select id="cliente-status"><option value="ativo">Ativo</option><option value="inativo">Inativo</option></select>
+      </div>
+      <button type="submit" class="btn-primary">Salvar cliente</button>
+      <button type="button" class="btn-danger hidden" id="btn-excluir-cliente" style="width:100%; margin-top:10px; text-align:center; justify-content:center;" onclick="excluirClienteAtual()">Excluir cliente</button>
+    </form>
+  </div>
+</div>
+
+<!-- MODAL: TÉCNICO (admin) -->
+<div class="modal-overlay" id="modal-tecnico">
+  <div class="modal">
+    <div class="modal-header"><h2 id="modal-tecnico-titulo">Técnico</h2><button class="modal-close" onclick="fecharModais()">×</button></div>
+    <form id="form-tecnico">
+      <input type="hidden" id="tecnico-id">
+      <div class="field"><label>Nome</label><input id="tecnico-nome" required></div>
+      <div class="row-2">
+        <div class="field"><label>Telefone</label><input id="tecnico-telefone"></div>
+        <div class="field"><label>Função</label><input id="tecnico-funcao" placeholder="Ex: Técnico CFTV"></div>
+      </div>
+      <div class="field">
+        <label>Status</label>
+        <select id="tecnico-status"><option value="ativo">Ativo</option><option value="inativo">Inativo</option></select>
+      </div>
+      <button type="submit" class="btn-primary">Salvar técnico</button>
+      <button type="button" class="btn-danger hidden" id="btn-excluir-tecnico" style="width:100%; margin-top:10px; text-align:center; justify-content:center;" onclick="excluirTecnicoAtual()">Excluir técnico</button>
+    </form>
+  </div>
+</div>
+
+<!-- MODAL: ATENDIMENTO (admin - criar/editar) -->
+<div class="modal-overlay" id="modal-atendimento-admin">
+  <div class="modal">
+    <div class="modal-header"><h2 id="modal-atendimento-titulo">Novo atendimento</h2><button class="modal-close" onclick="fecharModais()">×</button></div>
+    <form id="form-atendimento-admin">
+      <input type="hidden" id="at-id">
+      <div class="field">
+        <label>Cliente</label>
+        <select id="at-cliente" required></select>
+      </div>
+      <div class="row-2">
+        <div class="field">
+          <label>Tipo</label>
+          <select id="at-tipo">
+            <option value="preventiva">Preventiva</option>
+            <option value="corretiva">Corretiva</option>
+            <option value="instalacao">Instalação</option>
+            <option value="visita_tecnica">Visita técnica</option>
+          </select>
+        </div>
+        <div class="field"><label>Data</label><input type="date" id="at-data" required></div>
+      </div>
+      <div class="field">
+        <label>Técnicos designados</label>
+        <div class="chips-wrap" id="at-tecnicos-chips"></div>
+      </div>
+      <div class="field">
+        <label>Status</label>
+        <select id="at-status">
+          <option value="pendente">Pendente</option>
+          <option value="aguardando_peca">Aguardando peça</option>
+          <option value="concluido">Concluído</option>
+        </select>
+      </div>
+      <div class="field"><label>Observações</label><textarea id="at-obs" rows="3"></textarea></div>
+      <div id="at-detalhes-tecnico"></div>
+      <button type="submit" class="btn-primary">Salvar atendimento</button>
+      <button type="button" class="btn-danger hidden" id="btn-excluir-atendimento" style="width:100%; margin-top:10px; text-align:center; justify-content:center;" onclick="excluirAtendimentoAtual()">Excluir atendimento</button>
+    </form>
+  </div>
+</div>
+
+<!-- MODAL: VINCULAR USUÁRIO (admin) -->
+<div class="modal-overlay" id="modal-usuario">
+  <div class="modal">
+    <div class="modal-header"><h2>Vincular login de técnico</h2><button class="modal-close" onclick="fecharModais()">×</button></div>
+    <p style="font-size:13px; color:var(--text-muted); line-height:1.5; margin-bottom:16px;">
+      Primeiro crie o login em <strong>Firebase Console → Authentication → Users → Add user</strong> (e-mail + senha).
+      Depois copie o <strong>UID</strong> gerado e cole abaixo, junto com o nome do técnico (precisa ser exatamente igual ao nome cadastrado em Técnicos).
+    </p>
+    <form id="form-usuario">
+      <div class="field"><label>UID do usuário (do Firebase Auth)</label><input id="usuario-uid" required placeholder="Cole o UID aqui"></div>
+      <div class="field"><label>E-mail (só pra referência)</label><input id="usuario-email" type="email"></div>
+      <div class="field">
+        <label>Tipo de acesso</label>
+        <select id="usuario-role">
+          <option value="tecnico">Técnico</option>
+          <option value="admin">Admin</option>
+        </select>
+      </div>
+      <div class="field" id="usuario-tecnico-wrap">
+        <label>Nome do técnico (exatamente como cadastrado)</label>
+        <input id="usuario-nome-tecnico" list="dl-tecnicos-nomes">
+        <datalist id="dl-tecnicos-nomes"></datalist>
+      </div>
+      <button type="submit" class="btn-primary">Vincular login</button>
+    </form>
+  </div>
+</div>
+
+<!-- MODAL: DIA DO CALENDÁRIO (admin) -->
+<div class="modal-overlay" id="modal-dia-calendario">
+  <div class="modal">
+    <div class="modal-header"><h2 id="modal-dia-calendario-titulo">Dia</h2><button class="modal-close" onclick="fecharModais()">×</button></div>
+    <div id="modal-dia-calendario-corpo"></div>
+  </div>
+</div>
+
+<!-- MODAL: BACKUP / MIGRAÇÃO (admin) -->
+<div class="modal-overlay" id="modal-backup">
+  <div class="modal">
+    <div class="modal-header"><h2>Backup e migração</h2><button class="modal-close" onclick="fecharModais()">×</button></div>
+    <div id="backup-diagnostico" style="font-size:11px; font-family:var(--mono); color:var(--text-muted); background:var(--ov-04); border-radius:12px; padding:12px; margin-bottom:16px; word-break:break-all; user-select:all;"></div>
+    <p style="font-size:13px; color:var(--text-muted); line-height:1.5; margin-bottom:18px;">
+      Exporta ou importa clientes, técnicos e atendimentos direto do banco de dados na nuvem (Firestore).
+      Também serve pra trazer o backup do Diário de Suporte antigo — é só importar o arquivo .json de lá.
+    </p>
+    <button type="button" class="btn-primary" style="margin-bottom:10px;" onclick="exportarBackupFirestore()">Exportar backup (baixar arquivo)</button>
+    <label class="btn-secondary" style="display:flex; align-items:center; justify-content:center; cursor:pointer;">
+      Importar backup (escolher arquivo)
+      <input type="file" accept=".json" id="input-importar-backup" style="display:none;" onchange="importarBackupFirestore(event)">
+    </label>
+    <div id="backup-status" style="margin-top:14px; font-size:12px; font-family:var(--mono); color:var(--text-muted); white-space:pre-wrap; display:none; background:var(--ov-04); border-radius:12px; padding:12px;"></div>
+  </div>
+</div>
+
+<!-- MODAL: NOTIFICAÇÕES DE PONTO (admin) -->
+<div class="modal-overlay" id="modal-notificacoes">
+  <div class="modal">
+    <div class="modal-header"><h2>Notificações de ponto</h2><button class="modal-close" onclick="fecharModais()">×</button></div>
+    <div id="notificacoes-lista"></div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-app.js";
+import {
+  getAuth, onAuthStateChanged, signInWithEmailAndPassword, signOut
+} from "https://www.gstatic.com/firebasejs/12.16.0/firebase-auth.js";
+import {
+  getFirestore, doc, getDoc, setDoc, addDoc, updateDoc, deleteDoc,
+  collection, query, where, orderBy, onSnapshot, arrayUnion
+} from "https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyDTmK1KNctb8xnn7AN8d2jqpVRsF7f0LLs",
+  authDomain: "attive-fe373.firebaseapp.com",
+  projectId: "attive-fe373",
+  storageBucket: "attive-fe373.firebasestorage.app",
+  messagingSenderId: "553587440097",
+  appId: "1:553587440097:web:7f61ffdb62cba425d67aa0"
+};
+
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
+
+window.addEventListener('error', function(ev){
+  console.error('Erro capturado:', ev.error || ev.message);
+  const el = document.getElementById('erro-global-banner');
+  if(el){
+    el.style.display = 'block';
+    el.textContent = 'Erro: ' + (ev.message || 'erro desconhecido') + '. Toque pra fechar.';
+  }
+});
+
+let usuarioAtual = null; // { uid, role, nomeTecnico, email }
+let clientes = [], tecnicos = [], atendimentos = [], notificacoes = [];
+let telaAtiva = 'atendimentos';
+let unsubClientes = null, unsubTecnicos = null, unsubAtendimentos = null, unsubNotificacoes = null;
+
+function toast(msg){
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'), 2400);
+}
+window.fecharModais = function(){
+  document.querySelectorAll('.modal-overlay').forEach(m=>m.classList.remove('active'));
+}
+function fmtData(iso){
+  if(!iso) return '';
+  const d = new Date(iso+'T00:00:00');
+  return d.toLocaleDateString('pt-BR', {day:'2-digit', month:'2-digit', year:'numeric'});
+}
+function fmtHora(iso){
+  if(!iso) return '';
+  return new Date(iso).toLocaleString('pt-BR', {day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit'});
+}
+function clienteNome(id){
+  const c = clientes.find(c=>c.id===id);
+  return c ? c.nome : '— cliente —';
+}
+function statusLabel(s){
+  return {pendente:'Pendente', aguardando_peca:'Aguardando peça', concluido:'Concluído'}[s] || s;
+}
+function tipoLabel(t){
+  return {preventiva:'Preventiva', corretiva:'Corretiva', instalacao:'Instalação', visita_tecnica:'Visita técnica'}[t] || t;
+}
+function iconEmpty(){
+  return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 9h.01M15 9h.01M8 15s1.5 2 4 2 4-2 4-2"/></svg>';
+}
+
+/* ================== NOTIFICAÇÕES DE PONTO (admin) ================== */
+function atualizarBadgeNotificacoes(){
+  const badge = document.getElementById('notif-badge-count');
+  if(!badge) return;
+  const naoLidas = notificacoes.filter(n=>!n.lida).length;
+  badge.textContent = naoLidas > 99 ? '99+' : String(naoLidas);
+  badge.classList.toggle('hidden', naoLidas===0);
+}
+let ctxAudioNotificacao = null;
+function tocarSomNotificacao(){
+  try{
+    if(!ctxAudioNotificacao) ctxAudioNotificacao = new (window.AudioContext || window.webkitAudioContext)();
+    const ctx = ctxAudioNotificacao;
+    if(ctx.state === 'suspended') ctx.resume();
+    const tocarNota = (freq, inicio, duracao)=>{
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(freq, ctx.currentTime + inicio);
+      gain.gain.setValueAtTime(0.0001, ctx.currentTime + inicio);
+      gain.gain.linearRampToValueAtTime(0.28, ctx.currentTime + inicio + 0.01);
+      gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + inicio + duracao);
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start(ctx.currentTime + inicio);
+      osc.stop(ctx.currentTime + inicio + duracao + 0.02);
+    };
+    tocarNota(880, 0, 0.14);
+    tocarNota(1180, 0.16, 0.18);
+  }catch(e){ /* áudio bloqueado pelo navegador, sem problema */ }
+}
+window.abrirModalNotificacoes = function(){
+  renderListaNotificacoes();
+  document.getElementById('modal-notificacoes').classList.add('active');
+  notificacoes.filter(n=>!n.lida).forEach(n=>{
+    updateDoc(doc(db,'notificacoes', n.id), {lida:true}).catch(()=>{});
+  });
+};
+function renderListaNotificacoes(){
+  const el = document.getElementById('notificacoes-lista');
+  if(!el) return;
+  if(notificacoes.length===0){
+    el.innerHTML = `<div class="empty">${iconEmpty()}<p>Nenhuma notificação ainda.</p></div>`;
+    return;
+  }
+  el.innerHTML = notificacoes.map(n=>`
+    <div class="card notif-card" style="${n.lida?'':'border-color:var(--accent);'}">
+      <div style="display:flex; align-items:center; gap:8px; margin-bottom:3px;">
+        <span style="width:7px; height:7px; border-radius:50%; flex-shrink:0; background:${n.tipo==='chegada'?'var(--ok)':'var(--alert)'};"></span>
+        <span style="font-weight:700; font-size:13px;">${n.tecnico||'Técnico'} registrou ${n.tipo==='chegada'?'chegada':'saída'}</span>
+      </div>
+      <div style="font-size:12px; color:var(--text-muted);">${n.clienteNome||''} · ${fmtHora(n.hora)}</div>
+    </div>
+  `).join('');
+}
+
+/* ---------------- LOGIN / LOGOUT ---------------- */
+document.getElementById('form-login').addEventListener('submit', async e=>{
+  e.preventDefault();
+  const email = document.getElementById('login-email').value.trim();
+  const senha = document.getElementById('login-senha').value;
+  const btn = document.getElementById('btn-login');
+  const erroEl = document.getElementById('login-erro');
+  erroEl.style.display = 'none';
+  btn.disabled = true;
+  btn.innerHTML = '<span class="loading-spinner"></span> Entrando...';
+  try{
+    await signInWithEmailAndPassword(auth, email, senha);
+  }catch(e){
+    erroEl.textContent = 'Erro: ' + (e.code || 'desconhecido') + ' — ' + (e.message || '');
+    erroEl.style.display = 'block';
+  }finally{
+    btn.disabled = false;
+    btn.textContent = 'Entrar';
+  }
+});
+
+window.fazerLogout = function(){
+  if(unsubClientes) unsubClientes();
+  if(unsubTecnicos) unsubTecnicos();
+  if(unsubAtendimentos) unsubAtendimentos();
+  if(unsubNotificacoes) unsubNotificacoes();
+  signOut(auth);
+};
+
+onAuthStateChanged(auth, async (user)=>{
+  document.getElementById('tela-carregando').classList.add('hidden');
+  if(!user){
+    usuarioAtual = null;
+    document.getElementById('app-shell').style.display = 'none';
+    document.getElementById('tela-login').classList.remove('hidden');
+    return;
+  }
+  document.getElementById('tela-login').classList.add('hidden');
+  try{
+    const usuarioSnap = await getDoc(doc(db, 'usuarios', user.uid));
+    if(!usuarioSnap.exists()){
+      alert('Sua conta ainda não foi configurada pelo administrador. Peça pra ele vincular seu acesso.');
+      await signOut(auth);
+      return;
+    }
+    const dados = usuarioSnap.data();
+    usuarioAtual = { uid: user.uid, email: user.email, role: dados.role, nomeTecnico: dados.nomeTecnico || null };
+    iniciarApp();
+  }catch(e){
+    toast('Erro ao carregar seu perfil: ' + e.message);
+  }
+});
+
+/* ---------------- INICIALIZAÇÃO DO APP ---------------- */
+function iniciarApp(){
+  document.getElementById('app-shell').style.display = 'flex';
+  document.getElementById('avatar-usuario').textContent = (usuarioAtual.nomeTecnico || usuarioAtual.email || '?').charAt(0).toUpperCase();
+  document.getElementById('topbar-sub').textContent = (usuarioAtual.role === 'admin' ? 'Administrador' : ('Técnico · ' + (usuarioAtual.nomeTecnico||''))) + ' · UID: ' + usuarioAtual.uid;
+
+  if(usuarioAtual.role === 'admin'){
+    document.getElementById('btn-backup-topbar').classList.remove('hidden');
+    document.getElementById('btn-notificacoes-topbar').classList.remove('hidden');
+    telaAtiva = 'painel';
+    montarNavAdmin();
+    escutarDadosAdmin();
+  } else {
+    telaAtiva = 'meus-atendimentos';
+    montarNavTecnico();
+    escutarDadosTecnico();
+  }
+}
+
+/* ---------------- NAVEGAÇÃO ---------------- */
+function montarNavAdmin(){
+  document.getElementById('bottom-nav').innerHTML = `
+    <button class="nav-item" data-tela="painel" onclick="mudarTela('painel')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="9" rx="1"/><rect x="14" y="3" width="7" height="5" rx="1"/><rect x="14" y="12" width="7" height="9" rx="1"/><rect x="3" y="16" width="7" height="5" rx="1"/></svg>
+      <span>Painel</span>
+    </button>
+    <button class="nav-item" data-tela="atendimentos" onclick="mudarTela('atendimentos')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
+      <span>Atend.</span>
+    </button>
+    <button class="nav-item" data-tela="clientes" onclick="mudarTela('clientes')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 21h18M5 21V7l8-4v18M19 21V11l-6-4"/></svg>
+      <span>Clientes</span>
+    </button>
+    <button class="nav-item" data-tela="tecnicos" onclick="mudarTela('tecnicos')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 21v-2a4 4 0 014-4h8a4 4 0 014 4v2"/></svg>
+      <span>Técnicos</span>
+    </button>
+    <button class="nav-item" data-tela="usuarios" onclick="mudarTela('usuarios')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 15a3 3 0 100-6 3 3 0 000 6z"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 11-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 11-2.83-2.83l.06-.06A1.65 1.65 0 004.6 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 112.83-2.83l.06.06A1.65 1.65 0 009 4.6a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 112.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
+      <span>Acessos</span>
+    </button>
+  `;
+  mudarTela('painel');
+}
+function montarNavTecnico(){
+  document.getElementById('bottom-nav').innerHTML = '';
+  mudarTela('meus-atendimentos');
+}
+
+window.mudarTela = function(tela){
+  telaAtiva = tela;
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.toggle('active', n.dataset.tela===tela));
+  renderTelaAtual();
+};
+
+function renderTelaAtual(){
+  if(usuarioAtual.role === 'admin'){
+    if(telaAtiva==='painel') renderPainelAdmin();
+    if(telaAtiva==='atendimentos') renderAtendimentosAdmin();
+    if(telaAtiva==='clientes') renderClientesAdmin();
+    if(telaAtiva==='tecnicos') renderTecnicosAdmin();
+    if(telaAtiva==='usuarios') renderUsuariosAdmin();
+  } else {
+    renderMeusAtendimentos();
+  }
+}
+
+/* ---------------- LISTENERS EM TEMPO REAL ---------------- */
+function escutarDadosAdmin(){
+  unsubClientes = onSnapshot(collection(db,'clientes'), snap=>{
+    clientes = snap.docs.map(d=>({id:d.id, ...d.data()}));
+    if(telaAtiva==='clientes'||telaAtiva==='atendimentos'||telaAtiva==='painel') renderTelaAtual();
+    popularSelectClientes();
+  }, e=>toast('Erro ao ler clientes: '+e.message));
+
+  unsubTecnicos = onSnapshot(collection(db,'tecnicos'), snap=>{
+    tecnicos = snap.docs.map(d=>({id:d.id, ...d.data()}));
+    if(telaAtiva==='tecnicos'||telaAtiva==='atendimentos'||telaAtiva==='painel') renderTelaAtual();
+    popularDatalistTecnicos();
+  }, e=>toast('Erro ao ler técnicos: '+e.message));
+
+  unsubAtendimentos = onSnapshot(query(collection(db,'atendimentos'), orderBy('data','desc')), snap=>{
+    atendimentos = snap.docs.map(d=>({id:d.id, ...d.data()}));
+    if(telaAtiva==='atendimentos'||telaAtiva==='painel') renderTelaAtual();
+  }, e=>toast('Erro ao ler atendimentos: '+e.message));
+
+  let notifPrimeiraCarga = false;
+  unsubNotificacoes = onSnapshot(query(collection(db,'notificacoes'), orderBy('criadoEm','desc')), snap=>{
+    notificacoes = snap.docs.map(d=>({id:d.id, ...d.data()}));
+    atualizarBadgeNotificacoes();
+    if(document.getElementById('modal-notificacoes').classList.contains('active')) renderListaNotificacoes();
+
+    if(notifPrimeiraCarga){
+      const novas = snap.docChanges().filter(c=>c.type==='added');
+      if(novas.length){
+        tocarSomNotificacao();
+        const ultima = novas[novas.length-1].doc.data();
+        toast(`${ultima.tecnico||'Técnico'} registrou ${ultima.tipo==='chegada'?'chegada':'saída'} — ${ultima.clienteNome||''}`);
+      }
+    } else {
+      notifPrimeiraCarga = true;
+    }
+  }, e=>toast('Erro ao ler notificações: '+e.message));
+}
+
+function escutarDadosTecnico(){
+  unsubClientes = onSnapshot(collection(db,'clientes'), snap=>{
+    clientes = snap.docs.map(d=>({id:d.id, ...d.data()}));
+    renderTelaAtual();
+  }, e=>toast('Erro ao ler clientes: '+e.message));
+
+  const q = query(collection(db,'atendimentos'), where('tecnicos','array-contains', usuarioAtual.nomeTecnico));
+  unsubAtendimentos = onSnapshot(q, snap=>{
+    atendimentos = snap.docs.map(d=>({id:d.id, ...d.data()}));
+    atendimentos.sort((a,b)=> (b.data||'').localeCompare(a.data||''));
+    renderTelaAtual();
+  }, e=>toast('Erro ao ler seus atendimentos: '+e.message));
+}
+
+/* ================== VISÃO TÉCNICO ================== */
+function renderMeusAtendimentos(){
+  document.getElementById('topbar-title').textContent = 'Meus atendimentos';
+  const el = document.getElementById('main-content');
+  if(atendimentos.length===0){
+    el.innerHTML = `<div class="empty">${iconEmpty()}<p>Nenhum atendimento designado a você ainda.</p></div>`;
+    return;
+  }
+  const abertos = atendimentos.filter(a=>a.status!=='concluido');
+  const concluidos = atendimentos.filter(a=>a.status==='concluido');
+
+  const linha = a => `
+    <div class="card card-row" onclick="abrirDetalheAtendimento('${a.id}')">
+      <div>
+        <div class="card-title">${clienteNome(a.clienteId)}</div>
+        <div class="card-sub">${tipoLabel(a.tipo)} · ${fmtData(a.data)}</div>
+      </div>
+      <span class="chip ${a.status}"><span class="led"></span>${statusLabel(a.status)}</span>
+    </div>`;
+
+  el.innerHTML = `
+    <div class="section-title">Em aberto (${abertos.length})</div>
+    ${abertos.length ? abertos.map(linha).join('') : '<div class="empty" style="padding:20px;"><p>Nenhum em aberto.</p></div>'}
+    <div class="section-title">Concluídos (${concluidos.length})</div>
+    ${concluidos.length ? concluidos.map(linha).join('') : '<div class="empty" style="padding:20px;"><p>Nenhum concluído ainda.</p></div>'}
+  `;
+}
+
+let fotosEmEdicao = []; // array de dataURLs (base64) enquanto o modal está aberto
+
+window.abrirDetalheAtendimento = function(id){
+  const a = atendimentos.find(a=>a.id===id);
+  if(!a) return;
+  const c = clientes.find(c=>c.id===a.clienteId);
+  const podeEditar = usuarioAtual.role==='tecnico';
+  fotosEmEdicao = Array.isArray(a.fotos) ? [...a.fotos] : [];
+  const materiais = Array.isArray(a.materiaisUsados) ? a.materiaisUsados : [];
+
+  document.getElementById('detalhe-atendimento-conteudo').innerHTML = `
+    <div class="field"><label>Cliente</label><div style="padding:12px 14px; background:var(--surface-2); border-radius:12px; font-weight:600;">${clienteNome(a.clienteId)}</div></div>
+    ${(c && (c.endereco||c.telefone||c.contato)) ? `
+      <div class="field">
+        <label>Dados do cliente</label>
+        <div style="padding:12px 14px; background:var(--surface-2); border-radius:12px; font-size:13px; line-height:1.7;">
+          ${c.endereco ? `Endereço: ${c.endereco}<br>` : ''}
+          ${c.telefone ? `Telefone: ${c.telefone}<br>` : ''}
+          ${c.contato ? `Contato: ${c.contato}` : ''}
+        </div>
+      </div>` : ''}
+    <div class="row-2">
+      <div class="field"><label>Tipo</label><div style="padding:12px 14px; background:var(--surface-2); border-radius:12px;">${tipoLabel(a.tipo)}</div></div>
+      <div class="field"><label>Data</label><div style="padding:12px 14px; background:var(--surface-2); border-radius:12px;">${fmtData(a.data)}</div></div>
+    </div>
+    <div class="field">
+      <label>Status</label>
+      <select id="detalhe-status" ${podeEditar?'':'disabled'}>
+        <option value="pendente" ${a.status==='pendente'?'selected':''}>Pendente</option>
+        <option value="aguardando_peca" ${a.status==='aguardando_peca'?'selected':''}>Aguardando peça</option>
+        <option value="concluido" ${a.status==='concluido'?'selected':''}>Concluído</option>
+      </select>
+    </div>
+    <div class="field">
+      <label>Registro de ponto</label>
+      ${podeEditar ? `
+      <div class="ponto-botoes">
+        <button type="button" class="btn-ponto chegada" id="btn-ponto-chegada" onclick="registrarPonto('${a.id}','chegada')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 19V5M5 12l7-7 7 7"/></svg>
+          Registrar chegada
+        </button>
+        <button type="button" class="btn-ponto saida" id="btn-ponto-saida" onclick="registrarPonto('${a.id}','saida')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 5v14M5 12l7 7 7-7"/></svg>
+          Registrar saída
+        </button>
+      </div>` : ''}
+      <div id="detalhe-registros-ponto"></div>
+    </div>
+    <div class="field">
+      <label>Observações</label>
+      <textarea id="detalhe-obs" rows="4" ${podeEditar?'':'disabled'}>${a.obs||''}</textarea>
+    </div>
+    <div class="field">
+      <label>Materiais usados</label>
+      <div id="detalhe-materiais-lista"></div>
+      ${podeEditar ? `<button type="button" class="btn-secondary" style="margin-top:6px;" onclick="adicionarLinhaMaterial()">+ Adicionar material</button>` : ''}
+    </div>
+    <div class="field">
+      <label>Fotos</label>
+      <div id="detalhe-fotos-grid" class="fotos-grid"></div>
+      ${podeEditar ? `
+        <label class="btn-secondary" style="display:flex; align-items:center; justify-content:center; cursor:pointer; margin-top:6px;">
+          Tirar/anexar foto
+          <input type="file" accept="image/*" capture="environment" id="input-foto-atendimento" style="display:none;" onchange="adicionarFotoAtendimento(event)">
+        </label>` : ''}
+    </div>
+    ${podeEditar ? `<button class="btn-primary" onclick="salvarAtualizacaoAtendimento('${a.id}')">Salvar atualização</button>` : ''}
+  `;
+
+  renderListaMateriais(materiais, podeEditar);
+  renderGridFotos(podeEditar);
+  renderRegistrosPonto(a.id);
+  document.getElementById('modal-atendimento-tecnico').classList.add('active');
+};
+
+/* -------- Registro de ponto (chegada / saída) -------- */
+function renderRegistrosPonto(id){
+  const wrap = document.getElementById('detalhe-registros-ponto');
+  if(!wrap) return;
+  const a = atendimentos.find(a=>a.id===id);
+  const registros = (a && Array.isArray(a.registrosPonto)) ? [...a.registrosPonto].sort((x,y)=>(x.hora||'').localeCompare(y.hora||'')) : [];
+  if(registros.length===0){
+    wrap.innerHTML = '<div style="font-size:12px; color:var(--text-dim); margin-top:6px;">Nenhum registro de ponto ainda.</div>';
+  } else {
+    wrap.innerHTML = `<div class="ponto-lista">` + registros.map(r=>`
+      <div class="ponto-item ${r.tipo}">
+        <span class="ponto-led"></span>
+        <span class="ponto-label">${r.tipo==='chegada'?'Chegada':'Saída'}</span>
+        <span class="ponto-tecnico">${r.tecnico||''}</span>
+        <span class="ponto-hora">${fmtHora(r.hora)}</span>
+      </div>
+    `).join('') + `</div>`;
+  }
+  atualizarBotoesPonto(id);
+}
+function ultimoRegistroDoTecnico(a){
+  if(!a || !Array.isArray(a.registrosPonto)) return null;
+  const meuNome = usuarioAtual.nomeTecnico || usuarioAtual.email;
+  const meus = a.registrosPonto.filter(r=>r.tecnico===meuNome).sort((x,y)=>(x.hora||'').localeCompare(y.hora||''));
+  return meus.length ? meus[meus.length-1] : null;
+}
+function atualizarBotoesPonto(id){
+  const btnChegada = document.getElementById('btn-ponto-chegada');
+  const btnSaida = document.getElementById('btn-ponto-saida');
+  if(!btnChegada || !btnSaida) return;
+  const a = atendimentos.find(a=>a.id===id);
+  const ultimo = ultimoRegistroDoTecnico(a);
+  const proximoEhChegada = !ultimo || ultimo.tipo === 'saida';
+  btnChegada.disabled = !proximoEhChegada;
+  btnSaida.disabled = proximoEhChegada;
+}
+window.registrarPonto = async function(atendimentoId, tipo){
+  const a = atendimentos.find(a=>a.id===atendimentoId);
+  if(!a) return;
+  const ultimo = ultimoRegistroDoTecnico(a);
+  if(ultimo && ultimo.tipo === tipo){
+    toast(tipo==='chegada'
+      ? 'Você já registrou chegada. Registre a saída antes de registrar outra chegada.'
+      : 'Você já registrou saída. Registre a chegada antes de registrar outra saída.');
+    return;
+  }
+  const registro = { tipo, tecnico: usuarioAtual.nomeTecnico || usuarioAtual.email, hora: new Date().toISOString() };
+  try{
+    await updateDoc(doc(db,'atendimentos', atendimentoId), {
+      registrosPonto: arrayUnion(registro)
+    });
+    if(!Array.isArray(a.registrosPonto)) a.registrosPonto = [];
+    a.registrosPonto.push(registro);
+    renderRegistrosPonto(atendimentoId);
+    toast((tipo==='chegada' ? 'Chegada registrada às ' : 'Saída registrada às ') + fmtHora(registro.hora) + '.');
+    await addDoc(collection(db,'notificacoes'), {
+      tipo, tecnico: registro.tecnico, atendimentoId,
+      clienteNome: clienteNome(a.clienteId),
+      hora: registro.hora, lida: false, criadoEm: new Date().toISOString(),
+    });
+  }catch(e){
+    toast('Erro ao registrar ponto: ' + e.message);
+  }
+};
+
+/* -------- Materiais usados -------- */
+let materiaisEmEdicao = [];
+function renderListaMateriais(materiais, podeEditar){
+  materiaisEmEdicao = materiais.map(m=>({...m}));
+  redesenharMateriais(podeEditar);
+}
+function redesenharMateriais(podeEditar){
+  const wrap = document.getElementById('detalhe-materiais-lista');
+  if(!wrap) return;
+  if(materiaisEmEdicao.length===0){
+    wrap.innerHTML = '<div style="font-size:12px; color:var(--text-dim);">Nenhum material registrado.</div>';
+    return;
+  }
+  wrap.innerHTML = materiaisEmEdicao.map((m,i)=>`
+    <div class="row-2" style="margin-bottom:8px; align-items:center;">
+      <input placeholder="Descrição" value="${(m.descricao||'').replace(/"/g,'&quot;')}" ${podeEditar?`oninput="atualizarMaterial(${i},'descricao',this.value)"`:'disabled'}>
+      <div style="display:flex; gap:6px;">
+        <input type="number" min="1" placeholder="Qtd" value="${m.quantidade||1}" style="flex:1;" ${podeEditar?`oninput="atualizarMaterial(${i},'quantidade',this.value)"`:'disabled'}>
+        ${podeEditar?`<button type="button" class="icon-btn" style="flex-shrink:0;" onclick="removerLinhaMaterial(${i})">×</button>`:''}
+      </div>
+    </div>
+  `).join('');
+}
+window.atualizarMaterial = function(i, campo, valor){
+  if(materiaisEmEdicao[i]) materiaisEmEdicao[i][campo] = valor;
+};
+window.adicionarLinhaMaterial = function(){
+  materiaisEmEdicao.push({descricao:'', quantidade:1});
+  redesenharMateriais(true);
+};
+window.removerLinhaMaterial = function(i){
+  materiaisEmEdicao.splice(i,1);
+  redesenharMateriais(true);
+};
+
+/* -------- Fotos (comprimidas, salvas como base64 no próprio documento) -------- */
+function renderGridFotos(podeEditar){
+  const wrap = document.getElementById('detalhe-fotos-grid');
+  if(!wrap) return;
+  if(fotosEmEdicao.length===0){
+    wrap.innerHTML = '<div style="font-size:12px; color:var(--text-dim);">Nenhuma foto anexada.</div>';
+    return;
+  }
+  wrap.innerHTML = fotosEmEdicao.map((foto,i)=>`
+    <div class="foto-thumb">
+      <img src="${foto}" onclick="window.open(this.src)">
+      ${podeEditar?`<button type="button" onclick="removerFotoAtendimento(${i})">×</button>`:''}
+    </div>
+  `).join('');
+}
+window.adicionarFotoAtendimento = function(ev){
+  const arquivo = ev.target.files[0];
+  if(!arquivo) return;
+  if(fotosEmEdicao.length>=4){ toast('Máximo de 4 fotos por atendimento.'); ev.target.value=''; return; }
+  const leitor = new FileReader();
+  leitor.onload = e=>{
+    const img = new Image();
+    img.onload = ()=>{
+      const canvas = document.createElement('canvas');
+      const maxLado = 900;
+      let {width, height} = img;
+      if(width > height && width > maxLado){ height = height*(maxLado/width); width = maxLado; }
+      else if(height > maxLado){ width = width*(maxLado/height); height = maxLado; }
+      canvas.width = width; canvas.height = height;
+      canvas.getContext('2d').drawImage(img, 0, 0, width, height);
+      const dataUrl = canvas.toDataURL('image/jpeg', 0.6);
+      fotosEmEdicao.push(dataUrl);
+      renderGridFotos(true);
+    };
+    img.src = e.target.result;
+  };
+  leitor.readAsDataURL(arquivo);
+  ev.target.value = '';
+};
+window.removerFotoAtendimento = function(i){
+  fotosEmEdicao.splice(i,1);
+  renderGridFotos(true);
+};
+
+window.salvarAtualizacaoAtendimento = async function(id){
+  const a = atendimentos.find(a=>a.id===id);
+  const novoStatus = document.getElementById('detalhe-status').value;
+  const novaObs = document.getElementById('detalhe-obs').value.trim();
+  const materiaisLimpos = materiaisEmEdicao
+    .filter(m=>m.descricao && m.descricao.trim())
+    .map(m=>({ descricao: m.descricao.trim(), quantidade: parseInt(m.quantidade)||1 }));
+  try{
+    await updateDoc(doc(db,'atendimentos', id), {
+      clienteId: a.clienteId, tipo: a.tipo, tecnicos: a.tecnicos, // exigido pelas regras, não muda
+      status: novoStatus, obs: novaObs,
+      materiaisUsados: materiaisLimpos,
+      fotos: fotosEmEdicao,
+    });
+    toast('Atendimento atualizado.');
+    fecharModais();
+  }catch(e){
+    toast('Erro ao salvar: ' + e.message);
+  }
+};
+
+/* ================== VISÃO ADMIN ================== */
+function popularSelectClientes(){
+  const sel = document.getElementById('at-cliente');
+  if(!sel) return;
+  const atual = sel.value;
+  sel.innerHTML = clientes.filter(c=>c.status!=='inativo').map(c=>`<option value="${c.id}">${c.nome}</option>`).join('');
+  if(atual) sel.value = atual;
+}
+function popularDatalistTecnicos(){
+  const dl = document.getElementById('dl-tecnicos-nomes');
+  if(!dl) return;
+  dl.innerHTML = tecnicos.map(t=>`<option value="${t.nome}">`).join('');
+}
+
+function renderAtendimentosAdmin(){
+  document.getElementById('topbar-title').textContent = 'Atendimentos';
+  const el = document.getElementById('main-content');
+  let html = `<button class="fab" onclick="abrirModalAtendimentoAdmin(null)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M12 5v14M5 12h14"/></svg></button>`;
+  if(atendimentos.length===0){
+    html += `<div class="empty">${iconEmpty()}<p>Nenhum atendimento cadastrado.</p></div>`;
+  } else {
+    html += atendimentos.map(a=>`
+      <div class="card card-row" onclick="abrirModalAtendimentoAdmin('${a.id}')">
+        <div>
+          <div class="card-title">${clienteNome(a.clienteId)}</div>
+          <div class="card-sub">${tipoLabel(a.tipo)} · ${fmtData(a.data)} · ${(a.tecnicos||[]).join(', ')||'sem técnico'}${(a.registrosPonto&&a.registrosPonto.length)?' · Ponto: '+a.registrosPonto.length:''}${(a.fotos&&a.fotos.length)?' · Fotos: '+a.fotos.length:''}</div>
+        </div>
+        <span class="chip ${a.status}"><span class="led"></span>${statusLabel(a.status)}</span>
+      </div>`).join('');
+  }
+  el.innerHTML = html;
+}
+
+window.abrirModalAtendimentoAdmin = function(id){
+  const isEdit = !!id;
+  const a = isEdit ? atendimentos.find(x=>x.id===id) : null;
+  document.getElementById('modal-atendimento-titulo').textContent = isEdit ? 'Editar atendimento' : 'Novo atendimento';
+  document.getElementById('at-id').value = id || '';
+  popularSelectClientes();
+  document.getElementById('at-cliente').value = a ? a.clienteId : (clientes[0]?.id || '');
+  document.getElementById('at-tipo').value = a ? a.tipo : 'preventiva';
+  document.getElementById('at-data').value = a ? a.data : new Date().toISOString().slice(0,10);
+  document.getElementById('at-status').value = a ? a.status : 'pendente';
+  document.getElementById('at-obs').value = a ? (a.obs||'') : '';
+
+  const selecionados = a ? (a.tecnicos||[]) : [];
+  document.getElementById('at-tecnicos-chips').innerHTML = tecnicos.filter(t=>t.status!=='inativo').map(t=>`
+    <button type="button" class="chip-toggle ${selecionados.includes(t.nome)?'selected':''}" data-nome="${t.nome}" onclick="this.classList.toggle('selected')">${t.nome}</button>
+  `).join('') || '<span style="font-size:12px; color:var(--text-dim);">Cadastre técnicos primeiro.</span>';
+
+  document.getElementById('btn-excluir-atendimento').classList.toggle('hidden', !isEdit);
+
+  const detalhesEl = document.getElementById('at-detalhes-tecnico');
+  const temRegistros = a && Array.isArray(a.registrosPonto) && a.registrosPonto.length;
+  const temMateriais = a && Array.isArray(a.materiaisUsados) && a.materiaisUsados.length;
+  const temFotos = a && Array.isArray(a.fotos) && a.fotos.length;
+  if(temRegistros || temMateriais || temFotos){
+    const registrosOrdenados = temRegistros ? [...a.registrosPonto].sort((x,y)=>(x.hora||'').localeCompare(y.hora||'')) : [];
+    detalhesEl.innerHTML = `
+      <div class="section-title" style="margin-top:4px;">Preenchido pelo técnico</div>
+      ${temRegistros ? `<div class="field"><label>Registro de ponto</label><div class="ponto-lista">${registrosOrdenados.map(r=>`
+        <div class="ponto-item ${r.tipo}">
+          <span class="ponto-led"></span>
+          <span class="ponto-label">${r.tipo==='chegada'?'Chegada':'Saída'}</span>
+          <span class="ponto-tecnico">${r.tecnico||''}</span>
+          <span class="ponto-hora">${fmtHora(r.hora)}</span>
+        </div>`).join('')}</div></div>` : ''}
+      ${temMateriais ? `<div class="field"><label>Materiais usados</label><div style="padding:10px 14px; background:var(--surface-2); border-radius:12px; font-size:13px; line-height:1.6;">${a.materiaisUsados.map(m=>`${m.quantidade}x ${m.descricao}`).join('<br>')}</div></div>` : ''}
+      ${temFotos ? `<div class="field"><label>Fotos</label><div class="fotos-grid">${a.fotos.map(f=>`<div class="foto-thumb"><img src="${f}" onclick="window.open(this.src)"></div>`).join('')}</div></div>` : ''}
+    `;
+  } else {
+    detalhesEl.innerHTML = '';
+  }
+
+  document.getElementById('modal-atendimento-admin').classList.add('active');
+};
+window.excluirAtendimentoAtual = async function(){
+  const id = document.getElementById('at-id').value;
+  if(!id) return;
+  if(!confirm('Excluir este atendimento? Essa ação não pode ser desfeita.')) return;
+  try{
+    await deleteDoc(doc(db,'atendimentos', id));
+    toast('Atendimento excluído.');
+    fecharModais();
+  }catch(e){ toast('Erro ao excluir: ' + e.message); }
+};
+
+document.getElementById('form-atendimento-admin').addEventListener('submit', async e=>{
+  e.preventDefault();
+  const id = document.getElementById('at-id').value;
+  const tecnicosSelecionados = Array.from(document.querySelectorAll('#at-tecnicos-chips .chip-toggle.selected')).map(b=>b.dataset.nome);
+  const dados = {
+    clienteId: document.getElementById('at-cliente').value,
+    tipo: document.getElementById('at-tipo').value,
+    data: document.getElementById('at-data').value,
+    status: document.getElementById('at-status').value,
+    obs: document.getElementById('at-obs').value.trim(),
+    tecnicos: tecnicosSelecionados,
+  };
+  try{
+    if(id){
+      await updateDoc(doc(db,'atendimentos', id), dados);
+    } else {
+      dados.criadoEm = new Date().toISOString();
+      await addDoc(collection(db,'atendimentos'), dados);
+    }
+    toast('Atendimento salvo.');
+    fecharModais();
+  }catch(e){
+    toast('Erro ao salvar: ' + e.message);
+  }
+});
+
+/* ================== BACKUP / MIGRAÇÃO ================== */
+window.abrirModalBackup = function(){
+  document.getElementById('backup-status').style.display = 'none';
+  document.getElementById('backup-diagnostico').textContent =
+    'Logado como: ' + usuarioAtual.email + '\nUID atual: ' + usuarioAtual.uid + '\nRole detectado: ' + usuarioAtual.role;
+  document.getElementById('modal-backup').classList.add('active');
+};
+
+window.exportarBackupFirestore = function(){
+  const dados = {
+    versao: 1,
+    exportadoEm: new Date().toISOString(),
+    clientes, tecnicos, atendimentos,
+  };
+  const blob = new Blob([JSON.stringify(dados, null, 2)], {type:'application/json'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `backup-attive-campo-${new Date().toISOString().slice(0,10)}.json`;
+  a.click();
+  URL.revokeObjectURL(url);
+  toast('Backup exportado.');
+};
+
+window.importarBackupFirestore = async function(ev){
+  const arquivo = ev.target.files[0];
+  if(!arquivo) return;
+  const statusEl = document.getElementById('backup-status');
+  statusEl.style.display = 'block';
+  statusEl.textContent = 'Lendo arquivo...';
+
+  let dados;
+  try{
+    const texto = await arquivo.text();
+    dados = JSON.parse(texto);
+  }catch(e){
+    statusEl.textContent = 'Erro: arquivo inválido ou corrompido.';
+    return;
+  }
+
+  const listaClientes = dados.clientes || [];
+  const listaTecnicos = dados.tecnicos || [];
+  const listaAtendimentos = dados.atendimentos || [];
+
+  let ok = 0, erros = 0;
+  let mensagensErro = [];
+  statusEl.textContent = `Importando ${listaClientes.length} clientes, ${listaTecnicos.length} técnicos e ${listaAtendimentos.length} atendimentos...`;
+
+  for(const c of listaClientes){
+    try{
+      const id = c.id || (crypto.randomUUID ? crypto.randomUUID() : String(Date.now()+Math.random()));
+      const { id: _id, ...resto } = c;
+      await setDoc(doc(db,'clientes', id), {
+        nome: resto.nome || '(sem nome)',
+        contato: resto.contato || '',
+        telefone: resto.telefone || '',
+        endereco: resto.endereco || '',
+        valorContrato: resto.valorContrato ?? null,
+        diaPreventiva: resto.diaPreventiva ?? null,
+        periodicidadePreventiva: resto.periodicidadePreventiva ?? null,
+        status: resto.status || 'ativo',
+      });
+      ok++;
+    }catch(e){ erros++; mensagensErro.push('Cliente "'+(c.nome||c.id)+'": '+e.message); console.error('Erro ao importar cliente', c, e); }
+  }
+
+  for(const t of listaTecnicos){
+    try{
+      const id = t.id || (crypto.randomUUID ? crypto.randomUUID() : String(Date.now()+Math.random()));
+      await setDoc(doc(db,'tecnicos', id), {
+        nome: t.nome || '(sem nome)',
+        telefone: t.telefone || '',
+        funcao: t.funcao || '',
+        status: t.status || 'ativo',
+      });
+      ok++;
+    }catch(e){ erros++; mensagensErro.push('Técnico "'+(t.nome||t.id)+'": '+e.message); console.error('Erro ao importar técnico', t, e); }
+  }
+
+  for(const a of listaAtendimentos){
+    try{
+      const id = a.id || (crypto.randomUUID ? crypto.randomUUID() : String(Date.now()+Math.random()));
+
+      // No app antigo, "tecnicos" é um array de objetos {nome, periodos}.
+      // Aqui só precisamos dos nomes (string simples).
+      let tecnicosArr = [];
+      if(Array.isArray(a.tecnicos) && a.tecnicos.length){
+        tecnicosArr = a.tecnicos.map(t => typeof t === 'string' ? t : (t && t.nome ? t.nome : '')).filter(Boolean);
+      } else if(a.tecnico){
+        tecnicosArr = [a.tecnico];
+      }
+
+      // O app antigo não tem um campo "obs" único — junta os campos detalhados
+      // (problema/diagnóstico/solução/peças/tempo) num texto só, pra não perder informação.
+      let obsPartes = [];
+      if(a.obs) obsPartes.push(a.obs);
+      if(a.problema) obsPartes.push('Problema: ' + a.problema);
+      if(a.diagnostico) obsPartes.push('Diagnóstico: ' + a.diagnostico);
+      if(a.solucao) obsPartes.push('Solução: ' + a.solucao);
+      if(a.pecas) obsPartes.push('Peças: ' + a.pecas);
+      if(a.tempo) obsPartes.push('Tempo: ' + a.tempo);
+      if(a.horaInicio || a.horaFim) obsPartes.push('Horário: ' + (a.horaInicio||'') + ' - ' + (a.horaFim||''));
+
+      await setDoc(doc(db,'atendimentos', id), {
+        clienteId: a.clienteId || '',
+        tipo: a.tipo || 'visita_tecnica',
+        data: a.data || new Date().toISOString().slice(0,10),
+        status: a.status || 'pendente',
+        obs: obsPartes.join('\n'),
+        tecnicos: tecnicosArr,
+      });
+      ok++;
+    }catch(e){ erros++; mensagensErro.push('Atendimento "'+(a.id)+'": '+e.message); console.error('Erro ao importar atendimento', a, e); }
+  }
+
+  let textoFinal = `Importação concluída: ${ok} registro(s) importado(s)${erros ? `, ${erros} com erro` : ''}.`;
+  if(mensagensErro.length){
+    textoFinal += '\n\nErros encontrados:\n' + mensagensErro.slice(0,8).join('\n');
+    if(mensagensErro.length>8) textoFinal += `\n... e mais ${mensagensErro.length-8} erro(s).`;
+  }
+  statusEl.textContent = textoFinal;
+  toast(erros ? 'Importação concluída com erros — veja os detalhes.' : 'Importação concluída.');
+  ev.target.value = '';
+};
+
+/* ================== PAINEL (dashboard) ================== */
+function formatarMoeda(v){
+  return (v||0).toLocaleString('pt-BR', {style:'currency', currency:'BRL'});
+}
+function toISODateLocal(d){
+  const y=d.getFullYear(), m=String(d.getMonth()+1).padStart(2,'0'), day=String(d.getDate()).padStart(2,'0');
+  return `${y}-${m}-${day}`;
+}
+
+let calMesAtual = new Date(new Date().getFullYear(), new Date().getMonth(), 1);
+
+function renderPainelAdmin(){
+  document.getElementById('topbar-title').textContent = 'Painel';
+  const el = document.getElementById('main-content');
+
+  const clientesAtivos = clientes.filter(c=>c.status==='ativo');
+  const tecnicosAtivos = tecnicos.filter(t=>t.status==='ativo');
+  const hoje30 = new Date(); hoje30.setDate(hoje30.getDate()-30);
+  const concluidos30 = atendimentos.filter(a=>a.status==='concluido' && a.data && new Date(a.data+'T00:00:00')>=hoje30).length;
+  const abertos = atendimentos.filter(a=>a.status!=='concluido').length;
+
+  el.innerHTML = `
+    <div class="stat-grid">
+      <div class="stat-card"><div class="stat-label">Clientes ativos</div><div class="stat-value">${clientesAtivos.length}</div></div>
+      <div class="stat-card"><div class="stat-label">Técnicos ativos</div><div class="stat-value">${tecnicosAtivos.length}</div></div>
+      <div class="stat-card"><div class="stat-label">Concluídos (30 dias)</div><div class="stat-value accent">${concluidos30}</div></div>
+      <div class="stat-card"><div class="stat-label">Em aberto</div><div class="stat-value alert">${abertos}</div></div>
+    </div>
+
+    <div class="section-title">Atendimentos por tipo</div>
+    <div class="card" id="painel-chart-tipos"></div>
+
+    <div class="section-title">Contratos mensais por cliente</div>
+    <div class="card" id="painel-chart-contratos"></div>
+
+    <div class="section-title">Calendário</div>
+    <div class="card" id="painel-calendario"></div>
+  `;
+
+  renderChartTipos();
+  renderChartContratos();
+  renderCalendarioAdmin();
+}
+
+/* -------- Gráfico: atendimentos por tipo -------- */
+const TIPO_COR = { preventiva:'#3B6FF0', corretiva:'#EF4444', instalacao:'#8B5CF6', visita_tecnica:'#06B6D4' };
+function renderChartTipos(){
+  const wrap = document.getElementById('painel-chart-tipos');
+  if(!wrap) return;
+  if(atendimentos.length===0){
+    wrap.innerHTML = `<div class="empty" style="padding:20px;">${iconEmpty()}<p>Nenhum atendimento cadastrado ainda.</p></div>`;
+    return;
+  }
+  const grupos = {};
+  atendimentos.forEach(a=>{ grupos[a.tipo] = (grupos[a.tipo]||0) + 1; });
+  const categorias = Object.keys(grupos).map(tipo=>({ label: tipoLabel(tipo), valor: grupos[tipo], cor: TIPO_COR[tipo]||'#8891A0' }));
+  const total = categorias.reduce((s,c)=>s+c.valor,0);
+  let acumulado = 0;
+  const stops = categorias.map(c=>{
+    const inicio = (acumulado/total)*360; acumulado += c.valor; const fim = (acumulado/total)*360;
+    return `${c.cor} ${inicio}deg ${fim}deg`;
+  }).join(', ');
+  wrap.innerHTML = `
+    <div class="rosca-flex">
+      <div style="width:130px; height:130px; border-radius:50%; background:conic-gradient(${stops}); flex-shrink:0;"></div>
+      <div class="rosca-legenda">
+        ${categorias.map(c=>{
+          const pct = total ? (c.valor/total*100) : 0;
+          return `<div class="rosca-legenda-item">
+            <span class="cal-dot" style="width:11px; height:11px; background:${c.cor};"></span>
+            <div>
+              <div style="font-size:13px; font-weight:600;">${c.label}</div>
+              <div style="font-size:11px; color:var(--text-muted); font-family:var(--mono);">${c.valor} · ${pct.toFixed(0)}%</div>
+            </div>
+          </div>`;
+        }).join('')}
+      </div>
+    </div>
+  `;
+}
+
+/* -------- Gráfico: contratos mensais por cliente -------- */
+function renderChartContratos(){
+  const wrap = document.getElementById('painel-chart-contratos');
+  if(!wrap) return;
+  const comContrato = clientes.filter(c=>c.status==='ativo' && c.valorContrato>0).sort((a,b)=>b.valorContrato-a.valorContrato);
+  if(comContrato.length===0){
+    wrap.innerHTML = `<div class="empty" style="padding:20px;">${iconEmpty()}<p>Nenhum cliente com valor de contrato definido. Edite um cliente pra adicionar.</p></div>`;
+    return;
+  }
+  const paleta = ['#3B6FF0','#F59E0B','#8B5CF6','#10B981','#EF4444','#06B6D4','#EC4899'];
+  const top = comContrato.slice(0,7), resto = comContrato.slice(7);
+  const categorias = top.map((c,i)=>({label:c.nome, valor:c.valorContrato, cor:paleta[i%paleta.length]}));
+  if(resto.length){
+    categorias.push({label:`Outros (${resto.length})`, valor: resto.reduce((s,c)=>s+c.valorContrato,0), cor:'#8891A0'});
+  }
+  const total = categorias.reduce((s,c)=>s+c.valor,0);
+  let acumulado = 0;
+  const stops = categorias.map(c=>{
+    const inicio=(acumulado/total)*360; acumulado+=c.valor; const fim=(acumulado/total)*360;
+    return `${c.cor} ${inicio}deg ${fim}deg`;
+  }).join(', ');
+  wrap.innerHTML = `
+    <div class="rosca-flex">
+      <div style="position:relative; width:130px; height:130px; flex-shrink:0;">
+        <div style="width:130px; height:130px; border-radius:50%; background:conic-gradient(${stops});"></div>
+        <div style="position:absolute; inset:20px; border-radius:50%; background:var(--surface); display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center;">
+          <div style="font-size:9px; color:var(--text-dim); font-family:var(--mono); text-transform:uppercase;">Total/mês</div>
+          <div style="font-size:12px; font-weight:800;">${formatarMoeda(total)}</div>
+        </div>
+      </div>
+      <div class="rosca-legenda">
+        ${categorias.map(c=>{
+          const pct = total ? (c.valor/total*100) : 0;
+          return `<div class="rosca-legenda-item">
+            <span class="cal-dot" style="width:11px; height:11px; background:${c.cor};"></span>
+            <div>
+              <div style="font-size:13px; font-weight:600;">${c.label}</div>
+              <div style="font-size:11px; color:var(--text-muted); font-family:var(--mono);">${formatarMoeda(c.valor)} · ${pct.toFixed(0)}%</div>
+            </div>
+          </div>`;
+        }).join('')}
+      </div>
+    </div>
+  `;
+}
+
+/* -------- Calendário -------- */
+function proximaPreventivaPrevista(c){
+  const hoje = new Date(); hoje.setHours(0,0,0,0);
+  if(c.diaPreventiva){
+    const dia = Math.min(Math.max(parseInt(c.diaPreventiva),1),31);
+    let candidata = new Date(hoje.getFullYear(), hoje.getMonth(), dia);
+    if(candidata < hoje) candidata = new Date(hoje.getFullYear(), hoje.getMonth()+1, dia);
+    return candidata;
+  }
+  if(c.periodicidadePreventiva){
+    const preventivas = atendimentos.filter(a=>a.clienteId===c.id && a.tipo==='preventiva' && a.data).sort((a,b)=>b.data.localeCompare(a.data));
+    if(preventivas.length===0) return null;
+    const ultima = new Date(preventivas[0].data+'T00:00:00');
+    const prevista = new Date(ultima);
+    prevista.setDate(prevista.getDate() + parseInt(c.periodicidadePreventiva));
+    return prevista >= hoje ? prevista : null;
+  }
+  return null;
+}
+function calcularEventosCalendario(){
+  const mapa = {};
+  const add = (iso, ev)=>{ if(!mapa[iso]) mapa[iso]=[]; mapa[iso].push(ev); };
+  atendimentos.forEach(a=>{
+    if(!a.data) return;
+    add(a.data, { previsto:false, cor: TIPO_COR[a.tipo]||'#8891A0', label:`${tipoLabel(a.tipo)} · ${clienteNome(a.clienteId)}`, id:a.id });
+  });
+  clientes.filter(c=>c.status==='ativo').forEach(c=>{
+    const prevista = proximaPreventivaPrevista(c);
+    if(!prevista) return;
+    const iso = toISODateLocal(prevista);
+    const jaTem = (mapa[iso]||[]).some(ev=>ev.label && ev.label.includes(c.nome) && ev.label.startsWith('Preventiva'));
+    if(jaTem) return;
+    add(iso, { previsto:true, cor: TIPO_COR.preventiva, label:`Preventiva prevista · ${c.nome}`, id:null, clienteId:c.id });
+  });
+  return mapa;
+}
+window.calMudarMes = function(delta){
+  calMesAtual = new Date(calMesAtual.getFullYear(), calMesAtual.getMonth()+delta, 1);
+  renderCalendarioAdmin();
+};
+window.calIrParaHoje = function(){
+  calMesAtual = new Date(new Date().getFullYear(), new Date().getMonth(), 1);
+  renderCalendarioAdmin();
+};
+window.calAbrirDiaModal = function(iso){
+  const eventos = calcularEventosCalendario()[iso] || [];
+  document.getElementById('modal-dia-calendario-titulo').textContent = fmtData(iso);
+  document.getElementById('modal-dia-calendario-corpo').innerHTML = eventos.length===0
+    ? '<div style="font-size:13px; color:var(--text-dim);">Nenhum evento neste dia.</div>'
+    : eventos.map(ev=>`
+      <div class="cal-evento-row" ${ev.id?`onclick="fecharModais(); abrirModalAtendimentoAdmin('${ev.id}')"`:(ev.clienteId?`onclick="fecharModais(); abrirModalCliente('${ev.clienteId}')"`:'')} style="cursor:pointer;">
+        <span class="cal-dot ${ev.previsto?'ring':''}" style="${ev.previsto?'border-color:'+ev.cor:'background:'+ev.cor}"></span>
+        <div style="flex:1; font-size:13px; font-weight:600;">${ev.label}</div>
+      </div>`).join('');
+  document.getElementById('modal-dia-calendario').classList.add('active');
+};
+function renderCalendarioAdmin(){
+  const wrap = document.getElementById('painel-calendario');
+  if(!wrap) return;
+  const eventos = calcularEventosCalendario();
+  const hoje = new Date(); hoje.setHours(0,0,0,0);
+  const hojeIso = toISODateLocal(hoje);
+  const ano = calMesAtual.getFullYear(), mes = calMesAtual.getMonth();
+  const primeiroDiaSemana = new Date(ano,mes,1).getDay();
+  const totalDiasMes = new Date(ano,mes+1,0).getDate();
+  const totalDiasMesAnt = new Date(ano,mes,0).getDate();
+  const nomesDow = ['D','S','T','Q','Q','S','S'];
+  const nomeMes = calMesAtual.toLocaleDateString('pt-BR', {month:'long', year:'numeric'});
+
+  const celulas = [];
+  for(let i=0;i<primeiroDiaSemana;i++) celulas.push({dia: totalDiasMesAnt-primeiroDiaSemana+1+i, out:true, iso:null});
+  for(let d=1; d<=totalDiasMes; d++) celulas.push({dia:d, out:false, iso: toISODateLocal(new Date(ano,mes,d))});
+  while(celulas.length%7!==0){ celulas.push({dia: celulas.length - (primeiroDiaSemana+totalDiasMes) + 1, out:true, iso:null}); }
+
+  const diaHTML = cel=>{
+    if(cel.out) return `<div class="cal-day out"><div class="cal-day-num">${cel.dia}</div></div>`;
+    const evs = eventos[cel.iso] || [];
+    const isHoje = cel.iso===hojeIso;
+    const dots = evs.slice(0,4).map(ev=>`<span class="cal-dot ${ev.previsto?'ring':''}" style="${ev.previsto?'border-color:'+ev.cor:'background:'+ev.cor}"></span>`).join('');
+    return `<div class="cal-day ${isHoje?'today':''}" ${evs.length?`onclick="calAbrirDiaModal('${cel.iso}')" style="cursor:pointer;"`:''}>
+      <div class="cal-day-num">${cel.dia}</div>
+      <div class="cal-day-dots">${dots}</div>
+    </div>`;
+  };
+
+  wrap.innerHTML = `
+    <div class="cal-header">
+      <div class="cal-title">${nomeMes}</div>
+      <div class="cal-nav">
+        <button class="cal-today-btn" onclick="calIrParaHoje()">Hoje</button>
+        <button class="cal-nav-btn" onclick="calMudarMes(-1)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3"><path d="M15 18l-6-6 6-6"/></svg></button>
+        <button class="cal-nav-btn" onclick="calMudarMes(1)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3"><path d="M9 18l6-6-6-6"/></svg></button>
+      </div>
+    </div>
+    <div class="cal-grid">
+      ${nomesDow.map(n=>`<div class="cal-dow">${n}</div>`).join('')}
+      ${celulas.map(diaHTML).join('')}
+    </div>
+    <div class="cal-legenda">
+      <div class="cal-legenda-item"><span class="cal-dot" style="background:${TIPO_COR.preventiva};"></span>Preventiva</div>
+      <div class="cal-legenda-item"><span class="cal-dot" style="background:${TIPO_COR.corretiva};"></span>Corretiva</div>
+      <div class="cal-legenda-item"><span class="cal-dot" style="background:${TIPO_COR.instalacao};"></span>Instalação</div>
+      <div class="cal-legenda-item"><span class="cal-dot" style="background:${TIPO_COR.visita_tecnica};"></span>Visita</div>
+      <div class="cal-legenda-item"><span class="cal-dot ring" style="border-color:var(--text-muted);"></span>Prevista (futura)</div>
+    </div>
+  `;
+}
+
+function renderClientesAdmin(){
+  document.getElementById('topbar-title').textContent = 'Clientes';
+  const el = document.getElementById('main-content');
+  let html = `<button class="fab" onclick="abrirModalCliente(null)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M12 5v14M5 12h14"/></svg></button>`;
+  if(clientes.length===0){
+    html += `<div class="empty">${iconEmpty()}<p>Nenhum cliente cadastrado.</p></div>`;
+  } else {
+    html += clientes.map(c=>`
+      <div class="card card-row" onclick="abrirModalCliente('${c.id}')">
+        <div>
+          <div class="card-title">${c.nome}</div>
+          <div class="card-sub">${c.contato||'Sem contato'}${c.telefone ? ' · '+c.telefone : ''}</div>
+        </div>
+        <span class="chip ${c.status==='ativo'?'concluido':'aguardando_peca'}"><span class="led"></span>${c.status==='ativo'?'Ativo':'Inativo'}</span>
+      </div>`).join('');
+  }
+  el.innerHTML = html;
+}
+window.abrirModalCliente = function(id){
+  const c = id ? clientes.find(x=>x.id===id) : null;
+  document.getElementById('modal-cliente-titulo').textContent = id ? 'Editar cliente' : 'Novo cliente';
+  document.getElementById('cliente-id').value = id || '';
+  document.getElementById('cliente-nome').value = c ? c.nome : '';
+  document.getElementById('cliente-contato').value = c ? (c.contato||'') : '';
+  document.getElementById('cliente-telefone').value = c ? (c.telefone||'') : '';
+  document.getElementById('cliente-endereco').value = c ? (c.endereco||'') : '';
+  document.getElementById('cliente-valor-contrato').value = c ? (c.valorContrato||'') : '';
+  document.getElementById('cliente-dia-preventiva').value = c ? (c.diaPreventiva||'') : '';
+  document.getElementById('cliente-periodicidade').value = c ? (c.periodicidadePreventiva||'') : '';
+  document.getElementById('cliente-status').value = c ? c.status : 'ativo';
+  document.getElementById('btn-excluir-cliente').classList.toggle('hidden', !id);
+  document.getElementById('modal-cliente').classList.add('active');
+};
+window.excluirClienteAtual = async function(){
+  const id = document.getElementById('cliente-id').value;
+  if(!id) return;
+  const c = clientes.find(x=>x.id===id);
+  if(!confirm(`Excluir o cliente "${c?.nome||''}"? Isso não apaga os atendimentos já registrados dele.`)) return;
+  try{
+    await deleteDoc(doc(db,'clientes', id));
+    toast('Cliente excluído.');
+    fecharModais();
+  }catch(e){ toast('Erro ao excluir: ' + e.message); }
+};
+document.getElementById('form-cliente').addEventListener('submit', async e=>{
+  e.preventDefault();
+  const nome = document.getElementById('cliente-nome').value.trim();
+  if(!nome){ toast('Digite o nome do cliente.'); return; }
+  const id = document.getElementById('cliente-id').value;
+  const dados = {
+    nome, contato: document.getElementById('cliente-contato').value.trim(),
+    telefone: document.getElementById('cliente-telefone').value.trim(),
+    endereco: document.getElementById('cliente-endereco').value.trim(),
+    valorContrato: document.getElementById('cliente-valor-contrato').value ? parseFloat(document.getElementById('cliente-valor-contrato').value) : null,
+    diaPreventiva: document.getElementById('cliente-dia-preventiva').value ? parseInt(document.getElementById('cliente-dia-preventiva').value) : null,
+    periodicidadePreventiva: document.getElementById('cliente-periodicidade').value ? parseInt(document.getElementById('cliente-periodicidade').value) : null,
+    status: document.getElementById('cliente-status').value,
+  };
+  try{
+    if(id) await updateDoc(doc(db,'clientes', id), dados);
+    else await addDoc(collection(db,'clientes'), dados);
+    toast('Cliente salvo.');
+    fecharModais();
+  }catch(e){ toast('Erro ao salvar: ' + e.message); }
+});
+
+function renderTecnicosAdmin(){
+  document.getElementById('topbar-title').textContent = 'Técnicos';
+  const el = document.getElementById('main-content');
+  let html = `<button class="fab" onclick="abrirModalTecnico(null)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M12 5v14M5 12h14"/></svg></button>`;
+  if(tecnicos.length===0){
+    html += `<div class="empty">${iconEmpty()}<p>Nenhum técnico cadastrado.</p></div>`;
+  } else {
+    html += tecnicos.map(t=>`
+      <div class="card card-row" onclick="abrirModalTecnico('${t.id}')">
+        <div>
+          <div class="card-title">${t.nome}</div>
+          <div class="card-sub">${t.funcao||'Função não informada'}${t.telefone ? ' · '+t.telefone : ''}</div>
+        </div>
+        <span class="chip ${t.status==='ativo'?'concluido':'aguardando_peca'}"><span class="led"></span>${t.status==='ativo'?'Ativo':'Inativo'}</span>
+      </div>`).join('');
+  }
+  el.innerHTML = html;
+}
+window.abrirModalTecnico = function(id){
+  const t = id ? tecnicos.find(x=>x.id===id) : null;
+  document.getElementById('modal-tecnico-titulo').textContent = id ? 'Editar técnico' : 'Novo técnico';
+  document.getElementById('tecnico-id').value = id || '';
+  document.getElementById('tecnico-nome').value = t ? t.nome : '';
+  document.getElementById('tecnico-telefone').value = t ? (t.telefone||'') : '';
+  document.getElementById('tecnico-funcao').value = t ? (t.funcao||'') : '';
+  document.getElementById('tecnico-status').value = t ? t.status : 'ativo';
+  document.getElementById('btn-excluir-tecnico').classList.toggle('hidden', !id);
+  document.getElementById('modal-tecnico').classList.add('active');
+};
+window.excluirTecnicoAtual = async function(){
+  const id = document.getElementById('tecnico-id').value;
+  if(!id) return;
+  const t = tecnicos.find(x=>x.id===id);
+  if(!confirm(`Excluir o técnico "${t?.nome||''}"? Os atendimentos já designados a ele continuam existindo, mas ele deixa de ter acesso a eles.`)) return;
+  try{
+    await deleteDoc(doc(db,'tecnicos', id));
+    toast('Técnico excluído.');
+    fecharModais();
+  }catch(e){ toast('Erro ao excluir: ' + e.message); }
+};
+document.getElementById('form-tecnico').addEventListener('submit', async e=>{
+  e.preventDefault();
+  const nome = document.getElementById('tecnico-nome').value.trim();
+  if(!nome){ toast('Digite o nome do técnico.'); return; }
+  const id = document.getElementById('tecnico-id').value;
+  const dados = {
+    nome, telefone: document.getElementById('tecnico-telefone').value.trim(),
+    funcao: document.getElementById('tecnico-funcao').value.trim(),
+    status: document.getElementById('tecnico-status').value,
+  };
+  try{
+    if(id) await updateDoc(doc(db,'tecnicos', id), dados);
+    else await addDoc(collection(db,'tecnicos'), dados);
+    toast('Técnico salvo.');
+    fecharModais();
+  }catch(e){ toast('Erro ao salvar: ' + e.message); }
+});
+
+function renderUsuariosAdmin(){
+  document.getElementById('topbar-title').textContent = 'Acessos (login)';
+  const el = document.getElementById('main-content');
+  el.innerHTML = `
+    <button class="fab" onclick="abrirModalUsuario()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M12 5v14M5 12h14"/></svg></button>
+    <div class="card">
+      <p style="font-size:13px; color:var(--text-muted); line-height:1.6; margin:0;">
+        Pra dar acesso a um técnico:<br>
+        1. No <strong>Firebase Console → Authentication → Users</strong>, clique em "Add user" e crie um e-mail + senha para ele.<br>
+        2. Copie o <strong>UID</strong> gerado.<br>
+        3. Toque no botão <strong>+</strong> aqui embaixo, cole o UID e selecione o nome do técnico.
+      </p>
+    </div>
+  `;
+}
+window.abrirModalUsuario = function(){
+  document.getElementById('form-usuario').reset();
+  document.getElementById('modal-usuario').classList.add('active');
+};
+document.getElementById('usuario-role').addEventListener('change', e=>{
+  document.getElementById('usuario-tecnico-wrap').style.display = e.target.value==='tecnico' ? 'block' : 'none';
+});
+document.getElementById('form-usuario').addEventListener('submit', async e=>{
+  e.preventDefault();
+  const uid = document.getElementById('usuario-uid').value.trim();
+  const role = document.getElementById('usuario-role').value;
+  const nomeTecnico = document.getElementById('usuario-nome-tecnico').value.trim();
+  if(!uid){ toast('Cole o UID do usuário.'); return; }
+  if(role==='tecnico' && !nomeTecnico){ toast('Selecione o nome do técnico.'); return; }
+  try{
+    await setDoc(doc(db,'usuarios', uid), {
+      role, email: document.getElementById('usuario-email').value.trim(),
+      nomeTecnico: role==='tecnico' ? nomeTecnico : null,
+    });
+    toast('Login vinculado com sucesso.');
+    fecharModais();
+  }catch(e){ toast('Erro ao vincular: ' + e.message); }
+});
+</script>
+</body>
+</html>
