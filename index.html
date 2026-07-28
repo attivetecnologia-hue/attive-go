@@ -133,8 +133,39 @@ button{cursor:pointer; border:none; border-radius:12px; font-weight:700;}
 .tipo-badge{display:inline-flex; align-items:center; gap:5px; padding:3px 9px; border-radius:6px; font-size:10.5px; font-weight:700; text-transform:uppercase; letter-spacing:.3px; white-space:nowrap;}
 .tipo-badge-dot{width:6px; height:6px; border-radius:50%; flex-shrink:0;}
 .card-atendimento{border-left:3px solid transparent;}
-.card-atendimento-alerta{background:rgba(239,68,68,.06); box-shadow:0 0 0 1px rgba(239,68,68,.18), 0 4px 14px rgba(239,68,68,.08);}
+.card-atendimento-alerta{background:rgba(239,68,68,.06); box-shadow:0 0 0 1px rgba(239,68,68,.18), 0 4px 14px rgba(239,68,68,.08); border-left-color:var(--alert) !important;}
 .card-atendimento-calma{opacity:.82;}
+
+/* ---------- Atendimentos: barra de busca, filtros de status, resumo e agrupamento ---------- */
+.at-toolbar{display:flex; gap:8px; margin-bottom:12px;}
+.at-search{position:relative; flex:1;}
+.at-search svg{position:absolute; left:13px; top:50%; transform:translateY(-50%); width:16px; height:16px; color:var(--text-dim); pointer-events:none;}
+.at-search input{padding-left:38px;}
+.at-search-clear{position:absolute; right:6px; top:50%; transform:translateY(-50%); width:26px; height:26px; border-radius:8px; background:transparent; color:var(--text-dim); display:flex; align-items:center; justify-content:center;}
+.at-search-clear svg{width:14px; height:14px;}
+.at-toggle-btn{width:44px; flex-shrink:0; border-radius:12px; background:var(--surface-2); border:1px solid var(--border); color:var(--text-muted); display:flex; align-items:center; justify-content:center;}
+.at-toggle-btn.active{background:var(--accent-dim); color:var(--accent); border-color:rgba(59,111,240,.4);}
+.at-toggle-btn svg{width:17px; height:17px;}
+.at-resumo{display:flex; flex-wrap:wrap; gap:8px; margin-bottom:16px;}
+.at-resumo-item{display:flex; align-items:center; gap:7px; background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:9px 13px; color:var(--text); font-weight:700;}
+.at-resumo-item .led{width:7px; height:7px; border-radius:50%; flex-shrink:0;}
+.at-resumo-item.active{background:var(--accent-dim); border-color:rgba(59,111,240,.45);}
+.at-resumo-num{font-weight:800; font-size:14px;}
+.at-resumo-label{font-size:11px; color:var(--text-dim); font-weight:600;}
+.chip.atrasado{background:rgba(239,68,68,.14); color:var(--alert); border:1px solid rgba(239,68,68,.3);}
+.at-meta-chips{display:flex; flex-wrap:wrap; gap:6px; margin-top:8px;}
+.at-meta-chip{display:inline-flex; align-items:center; gap:4px; font-size:11px; font-weight:700; color:var(--text-muted); background:var(--ov-04); padding:4px 9px; border-radius:8px; white-space:nowrap;}
+.at-meta-chip svg{width:12px; height:12px; flex-shrink:0;}
+.at-date-header{font-size:11px; font-weight:800; color:var(--text-dim); text-transform:uppercase; letter-spacing:.04em; margin:16px 0 8px; display:flex; align-items:center; gap:6px;}
+.at-date-header:first-child{margin-top:0;}
+.at-date-header.atrasado{color:var(--alert);}
+.at-date-header svg{width:13px; height:13px;}
+.at-sort-hint{font-size:11px; color:var(--text-dim); margin:-6px 0 12px; display:flex; align-items:center; gap:5px;}
+.at-sort-hint svg{width:13px; height:13px; flex-shrink:0;}
+/* Modo compacto: reduz padding e esconde a descrição/meta-chips secundários, deixando só o essencial pra escanear volume alto de atendimentos rapidamente. */
+.lista-compacta .card-atendimento{padding:11px 14px;}
+.lista-compacta .card-title-cliente{font-size:14.5px;}
+.lista-compacta .at-meta-chips, .lista-compacta .at-desc-trecho{display:none;}
 
 /* ---------- Kanban (Atendimentos - Admin) ---------- */
 .view-toggle{display:flex; gap:8px; margin-bottom:16px;}
@@ -1521,6 +1552,9 @@ let configPremios = null; // documento config/premios (premiosPorNivel + metaTim
 let telaAtiva = 'atendimentos';
 let atendimentosViewMode = 'lista'; // 'lista' ou 'kanban' — visão da tela de Atendimentos do admin
 let atendimentosFiltroTecnico = ''; // '' = todos os técnicos; senão, nome exato do técnico selecionado no filtro
+let atendimentosFiltroStatus = ''; // '' = todos os status; senão, um dos status do KANBAN_COLUNAS
+let atendimentosBusca = ''; // texto digitado no campo de busca (nome do cliente / descrição)
+let atendimentosListaCompacta = false; // modo compacto da visão em lista (menos linhas por card)
 let orcamentosFiltroStatus = ''; // '' = todos os status
 let itensOrcamentoEmEdicao = []; // itens do orçamento aberto no modal (buffer local até salvar)
 const KANBAN_COLUNAS = [
@@ -3501,6 +3535,33 @@ function iconCheckPequeno(){
 function iconPin(){
   return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:12px; height:12px; flex-shrink:0;"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>';
 }
+function iconBusca(){
+  return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.35-4.35"/></svg>';
+}
+function iconFecharX(){
+  return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6L6 18M6 6l12 12"/></svg>';
+}
+function iconRelogioMeta(){
+  return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.5 2"/></svg>';
+}
+function iconCameraMeta(){
+  return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/><circle cx="12" cy="13" r="4"/></svg>';
+}
+function iconChecklistMeta(){
+  return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>';
+}
+function iconPontoMeta(){
+  return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>';
+}
+function iconListaDetalhada(){
+  return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg>';
+}
+function iconListaCompacta(){
+  return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M4 6h16M4 10h16M4 14h16M4 18h16"/></svg>';
+}
+function iconOrdenar(){
+  return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 4v16M7 4l-3 3M7 4l3 3M17 20V4M17 20l3-3M17 20l-3-3"/></svg>';
+}
 /* Converte coordenadas em endereço usando o Nominatim (OpenStreetMap), que é gratuito e não exige
    chave de API nem faturamento. Uso baixo (um registro por vez, por técnico) fica bem dentro da
    política de uso justo deles. Se falhar ou demorar, seguimos sem endereço — as coordenadas cruas
@@ -4078,9 +4139,109 @@ window.moverOrdemAtendimento = async function(id, direcao, ev){
   }catch(e){ toast('Erro ao reordenar: ' + traduzirErro(e)); }
 };
 
+/* ---------- Atendimentos: helpers de data local (evita off-by-one por fuso horário) ---------- */
+function isoHojeLocal(offsetDias){
+  const d = new Date();
+  if(offsetDias) d.setDate(d.getDate()+offsetDias);
+  return d.toLocaleDateString('sv-SE'); // formato YYYY-MM-DD, no fuso local do navegador
+}
+
+/* ---------- Atendimentos: filtro por técnico + busca (usado tanto pro resumo/contadores
+   quanto pro corpo da lista — o filtro de status é aplicado depois, separadamente, porque o
+   resumo precisa mostrar a contagem de TODOS os status mesmo com um deles selecionado). ---------- */
+function atendimentosBaseFiltrados(){
+  let lista = atendimentosFiltroTecnico
+    ? atendimentos.filter(a=>(a.tecnicos||[]).includes(atendimentosFiltroTecnico))
+    : atendimentos;
+  const termo = normNomeTec(atendimentosBusca);
+  if(termo){
+    lista = lista.filter(a=>{
+      const nome = normNomeTec(nomeClienteAtendimento(a));
+      const desc = normNomeTec(a.descricao || a.obs || '');
+      return nome.includes(termo) || desc.includes(termo);
+    });
+  }
+  return lista;
+}
+function algumFiltroAtendimentosAtivo(){
+  return !!(atendimentosFiltroTecnico || atendimentosFiltroStatus || atendimentosBusca.trim());
+}
+/* Agrupa os atendimentos "em aberto" (já ordenados) por urgência, pra visão sem técnico
+   específico filtrado — assim o admin enxerga o que está atrasado sem precisar ler a data de
+   cada card um por um. */
+function agruparAbertosPorData(lista){
+  const hoje = isoHojeLocal(0), amanha = isoHojeLocal(1), fimSemana = isoHojeLocal(6);
+  const grupos = { atrasado:[], hoje:[], amanha:[], semana:[], adiante:[] };
+  lista.forEach(a=>{
+    const d = a.data || '';
+    if(d && d < hoje) grupos.atrasado.push(a);
+    else if(d === hoje) grupos.hoje.push(a);
+    else if(d === amanha) grupos.amanha.push(a);
+    else if(d && d <= fimSemana) grupos.semana.push(a);
+    else grupos.adiante.push(a);
+  });
+  return grupos;
+}
+function construirResumoAtendimentosHtml(){
+  const base = atendimentosBaseFiltrados();
+  return `<div class="at-resumo">${KANBAN_COLUNAS.map(c=>{
+    const n = base.filter(a=>a.status===c.status).length;
+    const ativo = atendimentosFiltroStatus===c.status;
+    return `<button type="button" class="at-resumo-item ${ativo?'active':''}" onclick="mudarFiltroStatusAtendimentos('${c.status}')">
+      <span class="led" style="background:${c.cor};"></span>
+      <span class="at-resumo-num">${n}</span>
+      <span class="at-resumo-label">${c.titulo}</span>
+    </button>`;
+  }).join('')}</div>`;
+}
+/* Linha/card de um atendimento na visão em lista. Setas de reordenar só aparecem com um
+   técnico específico filtrado (a ordem manual é por técnico, então com "todos" selecionado
+   não haveria uma fila única pra reordenar). */
+function linhaAtendimento(a, comReordenar, idx, total){
+  const descricao = a.descricao || a.obs || '';
+  const descricaoTrecho = descricao.length>70 ? descricao.slice(0,70)+'…' : descricao;
+  const atrasado = a.status!=='recebido' && a.data && a.data < isoHojeLocal(0);
+
+  const chipsMeta = [];
+  if(categoriaNome(a.categoria)) chipsMeta.push(`<span class="at-meta-chip">${escapeHtml(categoriaNome(a.categoria))}</span>`);
+  const prog = progressoChecklist(a);
+  if(prog) chipsMeta.push(`<span class="at-meta-chip">${iconChecklistMeta()}${prog.marcados}/${prog.total}</span>`);
+  if(a.fotos && a.fotos.length) chipsMeta.push(`<span class="at-meta-chip">${iconCameraMeta()}${a.fotos.length}</span>`);
+  const duracao = duracaoNoClienteResumo(a);
+  if(duracao) chipsMeta.push(`<span class="at-meta-chip">${iconRelogioMeta()}${escapeHtml(duracao)}</span>`);
+  if(a.registrosPonto && a.registrosPonto.length) chipsMeta.push(`<span class="at-meta-chip">${iconPontoMeta()}${a.registrosPonto.length}</span>`);
+
+  const setas = comReordenar ? `
+    <div style="display:flex; flex-direction:column; gap:2px; flex-shrink:0;">
+      <button type="button" class="btn-secondary btn-sm" style="padding:3px 8px;" ${idx===0?'disabled':''} onclick="moverOrdemAtendimento('${a.id}', -1, event)">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6"><path d="M6 15l6-6 6 6"/></svg>
+      </button>
+      <button type="button" class="btn-secondary btn-sm" style="padding:3px 8px;" ${idx===total-1?'disabled':''} onclick="moverOrdemAtendimento('${a.id}', 1, event)">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6"><path d="M6 9l6 6 6-6"/></svg>
+      </button>
+    </div>` : '';
+  return `
+  <div style="display:flex; align-items:stretch; gap:8px;">
+    ${comReordenar ? `<div style="display:flex; align-items:center; font-size:11px; font-weight:800; color:var(--text-dim); width:16px; flex-shrink:0; justify-content:center;">${idx+1}</div>` : ''}
+    <div class="card card-atendimento ${a.sinalizacaoEsqueceuMaterial ? 'card-atendimento-alerta' : 'card-atendimento-calma'}" style="flex:1; min-width:0; border-left-color:${TIPO_COR[a.tipo]||'#64748B'};" onclick="abrirModalAtendimentoAdmin('${a.id}')">
+      <div class="card-title-cliente">${nomeClienteAtendimento(a)}${a.clienteAvulso ? ' <span style="font-size:10px; font-weight:700; color:var(--text-dim); text-transform:uppercase; letter-spacing:.02em;">· avulso</span>' : ''}</div>
+      <div style="display:flex; align-items:center; flex-wrap:wrap; gap:6px; margin:6px 0 4px;">
+        ${tipoBadge(a.tipo)}
+        <span class="chip ${a.status}"><span class="led"></span>${statusLabel(a.status)}</span>
+        ${a.sinalizacaoEsqueceuMaterial ? `<span class="chip alerta">${iconAlertaTriangulo()}Esqueceu material</span>` : ''}
+        ${atrasado ? `<span class="chip atrasado">${iconAlertaTriangulo()}Atrasado</span>` : ''}
+      </div>
+      <div class="card-sub" style="color:var(--text-dim);">${fmtData(a.data)}${a.horaAgendada?' às '+a.horaAgendada:''} · ${(a.tecnicos||[]).join(', ')||'sem técnico'}</div>
+      ${chipsMeta.length ? `<div class="at-meta-chips">${chipsMeta.join('')}</div>` : ''}
+      ${descricaoTrecho ? `<div class="at-desc-trecho" style="font-size:11.5px; color:var(--text-dim); margin-top:8px;">${escapeHtml(descricaoTrecho)}</div>` : ''}
+    </div>
+    ${setas}
+  </div>`;
+}
 function renderAtendimentosAdmin(){
   document.getElementById('topbar-title').textContent = 'Atendimentos';
   const el = document.getElementById('main-content');
+  el.classList.toggle('lista-compacta', atendimentosListaCompacta);
   let html = `<button class="fab" onclick="abrirModalAtendimentoAdmin(null)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M12 5v14M5 12h14"/></svg></button>`;
 
   html += `
@@ -4104,6 +4265,20 @@ function renderAtendimentosAdmin(){
   </div>`;
 
   html += `
+  <div class="at-toolbar">
+    <div class="at-search">
+      ${iconBusca()}
+      <input id="at-busca" type="text" placeholder="Buscar por cliente ou descrição..." value="${escapeHtml(atendimentosBusca)}" oninput="onBuscaAtendimentosInput(this.value)">
+      ${atendimentosBusca ? `<button type="button" class="at-search-clear" onclick="limparBuscaAtendimentos()">${iconFecharX()}</button>` : ''}
+    </div>
+    <button type="button" id="at-toggle-compacta" class="at-toggle-btn ${atendimentosListaCompacta?'active':''}" title="${atendimentosListaCompacta?'Ver lista detalhada':'Ver lista compacta'}" onclick="alternarListaCompactaAtendimentos()">
+      ${atendimentosListaCompacta ? iconListaDetalhada() : iconListaCompacta()}
+    </button>
+  </div>`;
+
+  html += `<div id="at-resumo-area"></div>`;
+
+  html += `
   <div class="field" style="margin-bottom:16px;">
     <label>Filtrar por técnico</label>
     <select id="at-filtro-tecnico" onchange="mudarFiltroTecnicoAtendimentos(this.value)">
@@ -4112,28 +4287,41 @@ function renderAtendimentosAdmin(){
     </select>
   </div>`;
 
-  const atendimentosFiltrados = atendimentosFiltroTecnico
-    ? atendimentos.filter(a=>(a.tecnicos||[]).includes(atendimentosFiltroTecnico))
-    : atendimentos;
+  html += `<div id="at-corpo"></div>`;
+
+  el.innerHTML = html;
+  renderAtendimentosDados();
+}
+/* Atualiza só o resumo/contadores e o corpo da lista (kanban/mapa/alertas/lista), sem recriar a
+   barra de busca — assim digitar no campo de busca não perde o foco/cursor a cada tecla. */
+function renderAtendimentosDados(){
+  const resumoEl = document.getElementById('at-resumo-area');
+  if(resumoEl) resumoEl.innerHTML = construirResumoAtendimentosHtml();
+  renderAtendimentosCorpo();
+}
+function renderAtendimentosCorpo(){
+  const corpo = document.getElementById('at-corpo');
+  if(!corpo) return;
+  const el = document.getElementById('main-content');
+  el.classList.toggle('main-wide', atendimentosViewMode==='kanban' || atendimentosViewMode==='mapa');
+
+  const base = atendimentosBaseFiltrados();
+  const atendimentosFiltrados = atendimentosFiltroStatus ? base.filter(a=>a.status===atendimentosFiltroStatus) : base;
 
   if(atendimentosFiltrados.length===0){
-    html += `<div class="empty">${iconEmpty()}<p>${atendimentosFiltroTecnico ? 'Nenhum atendimento desse técnico.' : 'Nenhum atendimento cadastrado.'}</p></div>`;
-    el.innerHTML = html;
+    corpo.innerHTML = `<div class="empty">${iconEmpty()}<p>${algumFiltroAtendimentosAtivo() ? 'Nenhum atendimento encontrado com esses filtros.' : 'Nenhum atendimento cadastrado.'}</p></div>`;
     return;
   }
 
   if(atendimentosViewMode==='kanban'){
-    el.classList.add('main-wide');
-    html += kanbanAtendimentosHtml(atendimentosFiltrados);
-    el.innerHTML = html;
+    corpo.innerHTML = kanbanAtendimentosHtml(atendimentosFiltrados);
     ativarDragDropKanban();
   } else if(atendimentosViewMode==='mapa'){
-    el.classList.add('main-wide');
     // O mapa mostra todo cliente com endereço cadastrado — colorido pela cor do status SÓ
     // quando um técnico está fisicamente lá agora (chegada registrada, saída ainda não);
     // em cinza em qualquer outro caso, mesmo com atendimento pendente/aguardando peça em aberto.
     const colunasNoMapa = KANBAN_COLUNAS.filter(c=>['pendente','aguardando_peca'].includes(c.status));
-    html += `
+    corpo.innerHTML = `
     <div id="mapa-atendimentos-wrap">
       <div id="mapa-atendimentos"></div>
       <div class="mapa-legenda">
@@ -4144,59 +4332,55 @@ function renderAtendimentosAdmin(){
       </div>
       <div class="mapa-sem-local" id="mapa-sem-local"></div>
     </div>`;
-    el.innerHTML = html;
     renderMapaAtendimentos(atendimentosFiltrados);
   } else if(atendimentosViewMode==='alertas'){
-    html += `<div id="admin-alertas-container" style="margin-top:16px;"></div>`;
-    el.innerHTML = html;
+    corpo.innerHTML = `<div id="admin-alertas-container" style="margin-top:16px;"></div>`;
   } else {
-    // Setas de reordenar só aparecem com um técnico específico filtrado (a ordem manual é por
-    // técnico, então com "todos" selecionado não haveria uma fila única pra reordenar).
-    const linha = (a, comReordenar, idx, total) => {
-      const descricao = a.descricao || a.obs || '';
-      const descricaoTrecho = descricao.length>70 ? descricao.slice(0,70)+'…' : descricao;
-      const setas = comReordenar ? `
-        <div style="display:flex; flex-direction:column; gap:2px; flex-shrink:0;">
-          <button type="button" class="btn-secondary btn-sm" style="padding:3px 8px;" ${idx===0?'disabled':''} onclick="moverOrdemAtendimento('${a.id}', -1, event)">
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6"><path d="M6 15l6-6 6 6"/></svg>
-          </button>
-          <button type="button" class="btn-secondary btn-sm" style="padding:3px 8px;" ${idx===total-1?'disabled':''} onclick="moverOrdemAtendimento('${a.id}', 1, event)">
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6"><path d="M6 9l6 6 6-6"/></svg>
-          </button>
-        </div>` : '';
-      return `
-      <div style="display:flex; align-items:stretch; gap:8px;">
-        ${comReordenar ? `<div style="display:flex; align-items:center; font-size:11px; font-weight:800; color:var(--text-dim); width:16px; flex-shrink:0; justify-content:center;">${idx+1}</div>` : ''}
-        <div class="card card-atendimento ${a.sinalizacaoEsqueceuMaterial ? 'card-atendimento-alerta' : 'card-atendimento-calma'}" style="flex:1; min-width:0; border-left-color:${TIPO_COR[a.tipo]||'#64748B'};" onclick="abrirModalAtendimentoAdmin('${a.id}')">
-          <div class="card-title-cliente">${nomeClienteAtendimento(a)}${a.clienteAvulso ? ' <span style="font-size:10px; font-weight:700; color:var(--text-dim); text-transform:uppercase; letter-spacing:.02em;">· avulso</span>' : ''}</div>
-          <div style="display:flex; align-items:center; flex-wrap:wrap; gap:6px; margin:6px 0 4px;">${tipoBadge(a.tipo)}<span class="chip ${a.status}"><span class="led"></span>${statusLabel(a.status)}</span></div>
-          <div class="card-sub" style="color:var(--text-dim);">${categoriaNome(a.categoria)?categoriaNome(a.categoria)+' · ':''}${fmtData(a.data)}${a.horaAgendada?' às '+a.horaAgendada:''} · ${(a.tecnicos||[]).join(', ')||'sem técnico'}${(a.registrosPonto&&a.registrosPonto.length)?' · Ponto: '+a.registrosPonto.length:''}${duracaoNoClienteResumo(a)?' · Tempo no cliente: '+duracaoNoClienteResumo(a):''}${(a.fotos&&a.fotos.length)?' · Fotos: '+a.fotos.length:''}${progressoChecklist(a)?' · Checklist: '+progressoChecklist(a).marcados+'/'+progressoChecklist(a).total:''}</div>
-          ${descricaoTrecho ? `<div style="font-size:11.5px; color:var(--text-dim); margin-top:4px;">${escapeHtml(descricaoTrecho)}</div>` : ''}
-          ${a.sinalizacaoEsqueceuMaterial ? `<div style="margin-top:6px;"><span class="chip alerta"><span class="led"></span>Esqueceu material</span></div>` : ''}
-        </div>
-        ${setas}
-      </div>`;
-    };
-
     // Em aberto: se um técnico específico está filtrado, usa a ordem manual definida pelo admin
     // pra esse técnico (o primeiro da fila é o mesmo que pisca no mapa). Com "todos os técnicos"
-    // selecionado, mantém o comportamento antigo: mais antigo primeiro.
+    // selecionado, agrupa por urgência (atrasado/hoje/amanhã/semana/mais adiante) em vez de uma
+    // lista plana — mais fácil de escanear com muitos atendimentos abertos.
     // Recebidos: mais recente primeiro (pra consulta rápida do que acabou de fechar).
     // "Recebido" agora é o status final de verdade (execução + faturamento + pagamento);
     // "concluído" sozinho só significa que o técnico terminou o serviço.
-    const abertos = atendimentosFiltroTecnico
+    const comReordenarAtivo = !!atendimentosFiltroTecnico;
+    const abertos = comReordenarAtivo
       ? atendimentosAbertosDoTecnicoOrdenados(atendimentosFiltroTecnico, atendimentosFiltrados)
       : atendimentosFiltrados.filter(a=>a.status!=='recebido').sort((x,y)=>(x.data||'').localeCompare(y.data||''));
     const concluidos = atendimentosFiltrados.filter(a=>a.status==='recebido').sort((x,y)=>(y.data||'').localeCompare(x.data||''));
 
-    html += `<div class="section-title">Em aberto (${abertos.length})</div>`;
-    if(atendimentosFiltroTecnico && abertos.length>1){
-      html += `<p style="font-size:11px; color:var(--text-dim); margin:-8px 0 10px;">Use as setas pra definir a ordem de atendimento de ${escapeHtml(atendimentosFiltroTecnico)}. O nº 1 é o pino que pisca no mapa.</p>`;
+    let corpoHtml = `<div class="section-title">Em aberto (${abertos.length})</div>`;
+    if(comReordenarAtivo){
+      corpoHtml += `<p class="at-sort-hint">${iconOrdenar()}Ordenado manualmente — use as setas pra definir a fila de ${escapeHtml(atendimentosFiltroTecnico)}. O nº 1 é o pino que pisca no mapa.</p>`;
+      corpoHtml += abertos.length ? abertos.map((a,i)=>linhaAtendimento(a, true, i, abertos.length)).join('') : '<div class="empty" style="padding:20px;"><p>Nenhum em aberto.</p></div>';
+    } else if(abertos.length){
+      corpoHtml += `<p class="at-sort-hint">${iconOrdenar()}Agrupado por urgência.</p>`;
+      const grupos = agruparAbertosPorData(abertos);
+      const secoes = [
+        { chave:'atrasado', titulo:'Atrasado', classe:'atrasado', icone:iconAlertaTriangulo() },
+        { chave:'hoje', titulo:'Hoje', classe:'', icone:'' },
+        { chave:'amanha', titulo:'Amanhã', classe:'', icone:'' },
+        { chave:'semana', titulo:'Esta semana', classe:'', icone:'' },
+        { chave:'adiante', titulo:'Mais adiante', classe:'', icone:'' },
+      ];
+      secoes.forEach(s=>{
+        const itens = grupos[s.chave];
+        if(itens.length){
+          corpoHtml += `<div class="at-date-header ${s.classe}">${s.icone}${s.titulo} (${itens.length})</div>`;
+          corpoHtml += itens.map(a=>linhaAtendimento(a, false, 0, 0)).join('');
+        }
+      });
+    } else {
+      corpoHtml += '<div class="empty" style="padding:20px;"><p>Nenhum em aberto.</p></div>';
     }
-    html += abertos.length ? abertos.map((a,i)=>linha(a, !!atendimentosFiltroTecnico, i, abertos.length)).join('') : '<div class="empty" style="padding:20px;"><p>Nenhum em aberto.</p></div>';
-    html += `<div class="section-title">Recebidos (${concluidos.length})</div>`;
-    html += concluidos.length ? concluidos.map(a=>linha(a, false, 0, 0)).join('') : '<div class="empty" style="padding:20px;"><p>Nenhum concluído ainda.</p></div>';
-    el.innerHTML = html;
+    corpoHtml += `<div class="section-title">Recebidos (${concluidos.length})</div>`;
+    if(concluidos.length){
+      corpoHtml += `<p class="at-sort-hint">${iconOrdenar()}Mais recentes primeiro.</p>`;
+      corpoHtml += concluidos.map(a=>linhaAtendimento(a, false, 0, 0)).join('');
+    } else {
+      corpoHtml += '<div class="empty" style="padding:20px;"><p>Nenhum concluído ainda.</p></div>';
+    }
+    corpo.innerHTML = corpoHtml;
   }
 }
 
@@ -4207,6 +4391,48 @@ window.mudarVisaoAtendimentos = function(modo){
 window.mudarFiltroTecnicoAtendimentos = function(nome){
   atendimentosFiltroTecnico = nome;
   renderAtendimentosAdmin();
+};
+window.mudarFiltroStatusAtendimentos = function(status){
+  atendimentosFiltroStatus = (atendimentosFiltroStatus === status) ? '' : status;
+  renderAtendimentosAdmin();
+};
+window.onBuscaAtendimentosInput = function(valor){
+  atendimentosBusca = valor;
+  renderAtendimentosDados();
+  atualizarBotaoLimparBuscaAtendimentos();
+};
+window.limparBuscaAtendimentos = function(){
+  atendimentosBusca = '';
+  const input = document.getElementById('at-busca');
+  if(input) input.value = '';
+  renderAtendimentosDados();
+  atualizarBotaoLimparBuscaAtendimentos();
+};
+function atualizarBotaoLimparBuscaAtendimentos(){
+  const wrap = document.querySelector('.at-search');
+  if(!wrap) return;
+  let btn = wrap.querySelector('.at-search-clear');
+  if(atendimentosBusca && !btn){
+    btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'at-search-clear';
+    btn.onclick = window.limparBuscaAtendimentos;
+    btn.innerHTML = iconFecharX();
+    wrap.appendChild(btn);
+  } else if(!atendimentosBusca && btn){
+    btn.remove();
+  }
+}
+window.alternarListaCompactaAtendimentos = function(){
+  atendimentosListaCompacta = !atendimentosListaCompacta;
+  const el = document.getElementById('main-content');
+  if(el) el.classList.toggle('lista-compacta', atendimentosListaCompacta);
+  const btn = document.getElementById('at-toggle-compacta');
+  if(btn){
+    btn.classList.toggle('active', atendimentosListaCompacta);
+    btn.title = atendimentosListaCompacta ? 'Ver lista detalhada' : 'Ver lista compacta';
+    btn.innerHTML = atendimentosListaCompacta ? iconListaDetalhada() : iconListaCompacta();
+  }
 };
 
 /* ---------- Kanban: monta o quadro completo (3 colunas por status) ---------- */
