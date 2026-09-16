@@ -5221,7 +5221,7 @@ function escutarDadosAdmin(){
   }, e=>toast('Erro ao ler lançamentos financeiros: '+traduzirErro(e)));
 
   let notifPrimeiraCarga = false;
-  unsubNotificacoes = onSnapshot(query(collection(db,'notificacoes'), orderBy('criadoEm','desc')), snap=>{
+  unsubNotificacoes = onSnapshot(query(collection(db,'notificacoes'), orderBy('criadoEm','desc'), limit(300)), snap=>{
     notificacoes = snap.docs.map(d=>({id:d.id, ...d.data()}));
     atualizarBadgeNotificacoes();
     if(document.getElementById('modal-notificacoes').classList.contains('active')) renderListaNotificacoes();
